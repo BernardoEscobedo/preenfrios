@@ -1,3 +1,4 @@
+
 const empleadosModel = require('../models/empleados.model');
 
 // GET /api/empleados
@@ -73,7 +74,7 @@ const deleteEmpleado = async (req, res) => {
     }
 };
 
-module.exports = {
+export const empleadosController = {
     getEmpleados,
     getEmpleadoById,
     createEmpleado,

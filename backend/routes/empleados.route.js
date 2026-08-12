@@ -19,4 +19,4 @@ router.put('/:id', validarIdEmpleado, validarEmpleado, empleadosController.updat
 // DELETE /api/empleados/:id
 router.delete('/:id', validarIdEmpleado, empleadosController.deleteEmpleado);
 
-module.exports = router;
+export default router
