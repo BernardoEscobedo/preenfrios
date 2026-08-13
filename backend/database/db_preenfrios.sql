@@ -439,3 +439,27 @@ CREATE UNIQUE INDEX ux_ocupacion_inventario_camara_activa
 ON ocupaciones_camaras(id_camara)
 WHERE tipo_ocupacion = 1
   AND estado = 1;
+
+-- //CONSULTAS
+select *from roles
+select *from empleados
+select *from usuarios
+
+-- //INSERT MANUALES
+
+insert into empleados (nombre,apellidos,turno,zona) values ('Bernardo','Escobedo Velazquez','DIURNO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Bertin de Jesus','Arias Gutierrez','DIURNO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Mauricio Gerardo','Vazquez Gachuz','DIURNO','TECOMAN, COLIMA');
+insert into empleados (nombre,apellidos,turno,zona) values ('Cristian Obet','Carballo Juarez','DIURNO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Omar','Aragon','DIURNO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador1','Operador1_tapachula','COMPLETO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador2','Operador2_tapachula','COMPLETO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador3','Operador3_tapachula','COMPLETO','TAPACHULA, CHIAPAS');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador1','Operador1_tecoman','COMPLETO','TECOMAN, COLIMA');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador2','Operador2_tecoman','COMPLETO','TECOMAN, COLIMA');
+insert into empleados (nombre,apellidos,turno,zona) values ('Operador3','Operador3_tecoman','COMPLETO','TECOMAN, COLIMA');
+
+
+
+
+

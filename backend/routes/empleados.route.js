@@ -5,38 +5,48 @@ import {
     validarIdEmpleado
 } from "../middlewares/empleados.middleware.js";
 
+
 const router = Router();
 
-// GET /api/empleados
-router.get("/", empleadosController.getEmpleados);
 
-// GET /api/empleados/:id
+// Obtener empleados
 router.get(
-    "/:id",
+    "/empleados",
+    empleadosController.getEmpleados
+);
+
+
+// Obtener empleado por ID
+router.get(
+    "/empleado/:id_empleado",
     validarIdEmpleado,
     empleadosController.getEmpleadoById
 );
 
-// POST /api/empleados
+
+// Registrar empleado
 router.post(
-    "/",
+    "/registrarempleado",
     validarEmpleado,
     empleadosController.createEmpleado
 );
 
-// PUT /api/empleados/:id
+
+// Actualizar empleado
 router.put(
-    "/:id",
+    "/actualizarempleado/:id_empleado",
     validarIdEmpleado,
     validarEmpleado,
     empleadosController.updateEmpleado
 );
 
-// DELETE /api/empleados/:id
+
+// Eliminar empleado
 router.delete(
-    "/:id",
+    "/eliminarempleado/:id_empleado",
     validarIdEmpleado,
     empleadosController.deleteEmpleado
 );
+
 
 export default router;

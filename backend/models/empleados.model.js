@@ -4,7 +4,7 @@ import { db } from "../database/connection.database.js";
 // Obtener todos los empleados
 const getEmpleados = async () => {
 
-    const result = await pool.query(
+    const result = await db.query(
         `
         SELECT *
         FROM empleados
@@ -19,7 +19,7 @@ const getEmpleados = async () => {
 // Obtener un empleado por ID
 const getEmpleadoById = async (id_empleado) => {
 
-    const result = await pool.query(
+    const result = await db.query(
         `
         SELECT *
         FROM empleados
@@ -40,7 +40,7 @@ const createEmpleado = async ({
     zona
 }) => {
 
-    const result = await pool.query(
+    const result = await db.query(
         `
         INSERT INTO empleados (
             nombre,
@@ -74,7 +74,7 @@ const updateEmpleado = async (
     }
 ) => {
 
-    const result = await pool.query(
+    const result = await db.query(
         `
         UPDATE empleados
         SET
@@ -101,7 +101,7 @@ const updateEmpleado = async (
 // Eliminar empleado
 const deleteEmpleado = async (id_empleado) => {
 
-    const result = await pool.query(
+    const result = await db.query(
         `
         DELETE FROM empleados
         WHERE id_empleado = $1
