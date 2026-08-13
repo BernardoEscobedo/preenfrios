@@ -12,6 +12,11 @@ import skuPtRouter from "./routes/skuPt.route.js";
 import lotesRouter from "./routes/lotes.route.js";
 import bloquesFrutaRouter from "./routes/bloquesFruta.route.js";
 import bloquesLoteDetalleRouter from "./routes/bloquesLoteDetalle.route.js";
+import transportesRouter from "./routes/transportes.route.js";
+import cedisClienteRouter from "./routes/cedisCliente.route.js";
+import despachosRouter from "./routes/despachos.route.js";
+import movimientosInventarioRouter from "./routes/movimientosInventario.route.js";
+import pulpeosRouter from "./routes/pulpeos.route.js";
 
 const app = express();
 
@@ -86,6 +91,32 @@ app.use(
     "/api/preenfrio/bloqueslotedetalle",
     bloquesLoteDetalleRouter
 );
+
+app.use(
+    "/api/preenfrio/cedisclientes",
+    cedisClienteRouter
+);
+
+app.use(
+    "/api/preenfrio/transportes",
+    transportesRouter
+);
+
+app.use(
+    "/api/preenfrio/despachos",
+    despachosRouter
+);
+
+app.use(
+    "/api/preenfrio/movimientos",
+    movimientosInventarioRouter
+);
+
+app.use(
+    "/api/preenfrio/pulpeos",
+    pulpeosRouter
+);
+
 
 // CONFIGURACIÓN
 const PORT = process.env.PORT || 3000;
