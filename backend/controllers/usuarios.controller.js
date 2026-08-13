@@ -86,7 +86,7 @@ const loginUsuario = async(req,res)=>{
             token,
             usuario:{
                 id_usuario: usuario_.id_usuario,
-                correo: usuario_.correo,
+                correo: usuario_.usuario,
                 role: usuario_.id_role
             }
         })
