@@ -10,6 +10,8 @@ import productoresRouter from "./routes/productores.route.js";
 import fincasRouter from "./routes/fincas.route.js";
 import skuPtRouter from "./routes/skuPt.route.js";
 import lotesRouter from "./routes/lotes.route.js";
+import bloquesFrutaRouter from "./routes/bloquesFruta.route.js";
+import bloquesLoteDetalleRouter from "./routes/bloquesLoteDetalle.route.js";
 
 const app = express();
 
@@ -73,6 +75,16 @@ app.use(
 app.use(
     "/api/preenfrio/lotes",
     lotesRouter
+);
+
+app.use(
+    "/api/preenfrio/bloques",
+    bloquesFrutaRouter
+);
+
+app.use(
+    "/api/preenfrio/bloqueslotedetalle",
+    bloquesLoteDetalleRouter
 );
 
 // CONFIGURACIÓN
