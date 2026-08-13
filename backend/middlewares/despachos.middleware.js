@@ -40,23 +40,37 @@ const validarLineaDetalle = (linea) => {
 };
 
 // Valida el body al crear un despacho (encabezado + detalle opcional)
+// Alineado al esquema: orden_venta, cita, fecha_cita, hora_salida,
+// temperatura_salida, estado y observaciones son NOT NULL.
 export const validarDespacho = (req, res, next) => {
     const {
         folio_despacho,
+        id_transporte,
         fecha_despacho,
+        hora_salida,
+        id_cc,
+        orden_venta,
+        cita,
         fecha_cita,
         temperatura_salida,
         estado,
+        observaciones,
         detalle
     } = req.body;
 
     if (
-        folio_despacho !== undefined &&
-        folio_despacho !== null &&
-        (typeof folio_despacho !== "string" || folio_despacho.length > 10)
+        !folio_despacho ||
+        typeof folio_despacho !== "string" ||
+        folio_despacho.trim() === "" ||
+        folio_despacho.length > 10
     ) {
         return res.status(400).json({
-            error: 'El campo "folio_despacho" debe ser texto y máximo 10 caracteres'
+            error: 'El campo "folio_despacho" es obligatorio, debe ser texto y máximo 10 caracteres'
+        });
+    }
+    if (!id_transporte || isNaN(Number(id_transporte))) {
+        return res.status(400).json({
+            error: 'El campo "id_transporte" es obligatorio y debe ser numérico'
         });
     }
     if (!fecha_despacho || isNaN(Date.parse(fecha_despacho))) {
@@ -64,32 +78,67 @@ export const validarDespacho = (req, res, next) => {
             error: 'El campo "fecha_despacho" es obligatorio y debe ser una fecha válida'
         });
     }
-    if (
-        fecha_cita !== undefined &&
-        fecha_cita !== null &&
-        fecha_cita !== "" &&
-        isNaN(Date.parse(fecha_cita))
-    ) {
+    if (!hora_salida || typeof hora_salida !== "string") {
         return res.status(400).json({
-            error: 'El campo "fecha_cita" debe ser una fecha válida'
+            error: 'El campo "hora_salida" es obligatorio (formato HH:MM o HH:MM:SS)'
+        });
+    }
+    if (!id_cc || isNaN(Number(id_cc))) {
+        return res.status(400).json({
+            error: 'El campo "id_cc" (cedis-cliente) es obligatorio y debe ser numérico'
         });
     }
     if (
-        temperatura_salida !== undefined &&
-        temperatura_salida !== null &&
+        !orden_venta ||
+        typeof orden_venta !== "string" ||
+        orden_venta.trim() === "" ||
+        orden_venta.length > 50
+    ) {
+        return res.status(400).json({
+            error: 'El campo "orden_venta" es obligatorio, debe ser texto y máximo 50 caracteres'
+        });
+    }
+    if (
+        !cita ||
+        typeof cita !== "string" ||
+        cita.trim() === "" ||
+        cita.length > 50
+    ) {
+        return res.status(400).json({
+            error: 'El campo "cita" es obligatorio, debe ser texto y máximo 50 caracteres'
+        });
+    }
+    if (!fecha_cita || isNaN(Date.parse(fecha_cita))) {
+        return res.status(400).json({
+            error: 'El campo "fecha_cita" es obligatorio y debe ser una fecha válida'
+        });
+    }
+    if (
+        temperatura_salida === undefined ||
+        temperatura_salida === null ||
         isNaN(Number(temperatura_salida))
     ) {
         return res.status(400).json({
-            error: 'El campo "temperatura_salida" debe ser numérico'
+            error: 'El campo "temperatura_salida" es obligatorio y debe ser numérico'
         });
     }
     if (
-        estado !== undefined &&
-        estado !== null &&
+        estado === undefined ||
+        estado === null ||
         isNaN(Number(estado))
     ) {
         return res.status(400).json({
-            error: 'El campo "estado" debe ser numérico'
+            error: 'El campo "estado" es obligatorio y debe ser numérico'
+        });
+    }
+    if (
+        !observaciones ||
+        typeof observaciones !== "string" ||
+        observaciones.trim() === "" ||
+        observaciones.length > 250
+    ) {
+        return res.status(400).json({
+            error: 'El campo "observaciones" es obligatorio, debe ser texto y máximo 250 caracteres'
         });
     }
     if (detalle !== undefined && detalle !== null) {

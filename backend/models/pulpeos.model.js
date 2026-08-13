@@ -8,6 +8,9 @@ import { db } from "../database/connection.database.js";
 //          -> pulpeos_evidencia (fotos por línea de detalle)
 // createPulpeo inserta encabezado + detalle[] + evidencia[] en
 // una sola transacción.
+//
+// Esquema: temperatura_objetivo y temperatura_promedio son
+// NOT NULL en el encabezado.
 // =========================================================
 
 // Obtener todos los pulpeos (con datos del bloque y usuario)
@@ -138,8 +141,8 @@ const createPulpeo = async ({
                 id_bloque,
                 fecha_hora,
                 numero_pulpeo || null,
-                temperatura_objetivo || null,
-                temperatura_promedio || null,
+                temperatura_objetivo,
+                temperatura_promedio,
                 id_usuario || null,
                 observaciones || null
             ]
@@ -301,8 +304,8 @@ const updatePulpeo = async (
             id_bloque,
             fecha_hora,
             numero_pulpeo || null,
-            temperatura_objetivo || null,
-            temperatura_promedio || null,
+            temperatura_objetivo,
+            temperatura_promedio,
             id_usuario || null,
             observaciones || null,
             id_pulpeo

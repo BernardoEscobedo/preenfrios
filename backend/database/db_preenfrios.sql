@@ -3,46 +3,49 @@
 -- =========================================================
 CREATE TABLE empleados(
     id_empleado SERIAL PRIMARY KEY,
-    nombre VARCHAR(60),
-    apellidos VARCHAR(80),
-    turno VARCHAR(60),
-    zona VARCHAR(60)
+    nombre VARCHAR(60) NOT NULL,
+    apellidos VARCHAR(80) NOT NULL,
+    turno VARCHAR(60) NOT NULL,
+    zona VARCHAR(60) NOT NULL
 );
 
 create table roles( 
-id_role serial primary key,
-tipo varchar(50) unique not null 
+	id_role serial primary key,
+	tipo varchar(50) UNIQUE NOT NULL 
 ); 
 
 CREATE TABLE usuarios(
     id_usuario SERIAL PRIMARY KEY,
-    usuario VARCHAR(60),
-    password_hash VARCHAR(60),
-    id_empleado INT REFERENCES empleados(id_empleado)
-    id_role INT REFERENCES roles(id_role)
+    usuario VARCHAR(60) UNIQUE NOT NULL,
+    password_hash VARCHAR(250) NOT NULL,
+    id_empleado INT NOT NULL REFERENCES empleados(id_empleado),
+    id_role INT NOT NULL REFERENCES roles(id_role),
+    CONSTRAINT chk_usuario_empleado CHECK (id_empleado > 0),
+    CONSTRAINT chk_usuario_role CHECK (id_role > 0)
 );
 
 CREATE TABLE camaras(
     id_camara SERIAL PRIMARY KEY,
-    nombre_camara VARCHAR(60),
-    tipo_camara INT,               -- 1=preenfrio, 2=conservacion
-    ubicacion VARCHAR(60),
-    capacidad_max_tarimas INT,
-    capacidad_max_cajas INT,
-    capacidad_max_bloques INT
+    nombre_camara VARCHAR(60) NOT NULL,
+    tipo_camara INT NOT NULL,               -- 1=preenfrio, 2=conservacion
+    ubicacion VARCHAR(60) NOT NULL,
+    capacidad_max_tarimas INT NOT NULL,
+    capacidad_max_cajas INT NOT NULL,
+    capacidad_max_bloques INT NOT NULL
 );
 
 CREATE TABLE mantenimientos(
     id_mantenimiento SERIAL PRIMARY KEY,
-    id_camara INT REFERENCES camaras(id_camara),
-    fecha_inicio DATE,
-    hora_inicio TIME,
+    id_camara INT NOT NULL REFERENCES camaras(id_camara),
+    fecha_inicio DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
     fecha_fin DATE,
     hora_fin TIME,
-    tipo INT,
-    motivo VARCHAR(60),
-    prioridad INT,
-    estado INT                     -- 1=programado, 2=en_proceso, 3=finalizado, 4=cancelado
+    tipo INT NOT NULL,
+    motivo VARCHAR(60) NOT NULL,
+    prioridad INT NOT NULL,
+    estado INT NOT NULL,                     -- 1=programado, 2=en_proceso, 3=finalizado, 4=cancelado
+    CONSTRAINT chk_mantenimiento_camara CHECK (id_camara > 0)
 );
 
 CREATE TABLE ocupaciones_camaras(
@@ -52,13 +55,15 @@ CREATE TABLE ocupaciones_camaras(
     hora_inicio TIME NOT NULL,
     fecha_fin DATE,
     hora_fin TIME,
-    cantidad_tarimas INT DEFAULT 0,
-    cantidad_cajas INT DEFAULT 0,
-    cantidad_bloques INT DEFAULT 0,
+    cantidad_tarimas INT NOT NULL DEFAULT 0,
+    cantidad_cajas INT NOT NULL DEFAULT 0,
+    cantidad_bloques INT NOT NULL DEFAULT 0,
     tipo_ocupacion INT NOT NULL DEFAULT 1, -- 1=producto/inventario, 2=mantenimiento
     id_mantenimiento INT REFERENCES mantenimientos(id_mantenimiento),
     estado INT,                    -- 1=activa, 0=cerrada
-    observaciones VARCHAR(200)
+    observaciones VARCHAR(200),
+    CONSTRAINT chk_ocupacion_camara CHECK (id_camara > 0),
+    CONSTRAINT chk_ocupacion_mantenimiento CHECK (id_mantenimiento > 0)
 );
 
 -- =========================================================
@@ -68,23 +73,24 @@ CREATE TABLE productores(
     id_productor SERIAL PRIMARY KEY,
     codigo_productor VARCHAR(4) UNIQUE NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    activo BOOLEAN DEFAULT TRUE
+    activo INT DEFAULT 1
 );
 
 CREATE TABLE fincas(
     id_finca SERIAL PRIMARY KEY,
     codigo_finca VARCHAR(3) UNIQUE NOT NULL,
-    nombre VARCHAR(70),
-    org_inv_nombre VARCHAR(70),
-    zona INT,
+    nombre VARCHAR(70) NOT NULL,
+    org_inv_nombre VARCHAR(70) NOT NULL,
+    zona INT NOT NULL,
     id_productor INT NOT NULL REFERENCES productores(id_productor),
-    estado INT
+    estado INT,
+    CONSTRAINT chk_finca_productor CHECK (id_productor > 0)
 );
 
 CREATE TABLE sku_pt(
     id_sku SERIAL PRIMARY KEY,
-    codigo_sku VARCHAR(10),
-    calidad VARCHAR(70)
+    codigo_sku VARCHAR(10) NOT NULL,
+    calidad VARCHAR(70) NOT NULL
 );
 
 CREATE TABLE lotes(
@@ -96,7 +102,9 @@ CREATE TABLE lotes(
     fecha_empaque DATE NOT NULL,
     turno INT NOT NULL,
     fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado INT
+    estado INT,
+    CONSTRAINT chk_lote_finca CHECK (id_finca > 0),
+    CONSTRAINT chk_lote_sku CHECK (id_sku > 0)
 );
 
 -- =========================================================
@@ -169,37 +177,40 @@ EXECUTE FUNCTION fn_recalcular_totales_bloque();
 -- =========================================================
 CREATE TABLE transportes(
     id_transporte SERIAL PRIMARY KEY,
-    razon_social VARCHAR(100),
-    nombre_operador VARCHAR(100),
-    celular VARCHAR(10),
-    placas_tracto VARCHAR(10),
-    placas_caja VARCHAR(10),
-    no_economico_caja VARCHAR(10)
+    razon_social VARCHAR(100) NOT NULL,
+    nombre_operador VARCHAR(100) NOT NULL,
+    celular VARCHAR(10) NOT NULL,
+    placas_tracto VARCHAR(10) NOT NULL,
+    placas_caja VARCHAR(10) NOT NULL,
+    no_economico_caja VARCHAR(10) NOT NULL,
+    inocuidad INT NOT NULL
 );
 
 CREATE TABLE cedis_cliente(
     id_cc SERIAL PRIMARY KEY,
-    cliente VARCHAR(80),
-    cedis VARCHAR(80),
-    acronimo VARCHAR(50)
+    cliente VARCHAR(80) NOT NULL,
+    cedis VARCHAR(80) NOT NULL,
+    acronimo VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE despachos(
     id_despacho SERIAL PRIMARY KEY,
-    folio_despacho VARCHAR(10) UNIQUE,
-    id_transporte INT REFERENCES transportes(id_transporte),
+    folio_despacho VARCHAR(10) NOT NULL UNIQUE,
+    id_transporte INT NOT NULL REFERENCES transportes(id_transporte),
     fecha_despacho DATE NOT NULL,
-    hora_salida TIME,
-    id_cc INT REFERENCES cedis_cliente(id_cc),
-    orden_venta VARCHAR(50),
-    cita VARCHAR(50),
-    fecha_cita DATE,
+    hora_salida TIME NOT NULL,
+    id_cc INT NOT NULL REFERENCES cedis_cliente(id_cc),
+    orden_venta VARCHAR(50) NOT NULL,
+    cita VARCHAR(50) NOT NULL,
+    fecha_cita DATE NOT NULL,
     cantidad_tarimas INT DEFAULT 0,
     cantidad_cajas INT DEFAULT 0,
-    temperatura_salida NUMERIC(5,2),
-    estado INT,
-    observaciones VARCHAR(250),
-    fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    temperatura_salida NUMERIC(5,2) NOT NULL,
+    estado INT NOT NULL,
+    observaciones VARCHAR(250) NOT NULL,
+    fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_despacho_transporte CHECK (id_transporte > 0),
+    CONSTRAINT chk_despacho_cliente_cedis CHECK (id_cc > 0)
 );
 
 -- Detalle de despacho: por bloque + lote, agregado (sin tarima individual)
@@ -211,7 +222,10 @@ CREATE TABLE despachos_detalle(
     cantidad_tarimas INT NOT NULL,
     cantidad_cajas INT NOT NULL,
     temperatura NUMERIC(5,2),
-    observaciones VARCHAR(250)
+    observaciones VARCHAR(250),
+    CONSTRAINT chk_despacho_det_despacho CHECK (id_despacho > 0),
+    CONSTRAINT chk_despacho_det_bloque CHECK (id_bloque > 0),
+    CONSTRAINT chk_despacho_det_lote CHECK (id_lote > 0)
 );
 
 -- =========================================================
@@ -233,7 +247,11 @@ CREATE TABLE movimientos_inventario(
     cantidad_cajas INT NOT NULL,
     temperatura NUMERIC(5,2),
     id_usuario INT REFERENCES usuarios(id_usuario),
-    observaciones VARCHAR(250)
+    observaciones VARCHAR(250),
+    CONSTRAINT chk_mov_inv_lote CHECK (id_lote > 0),
+    CONSTRAINT chk_mov_inv_camara_org CHECK (id_camara_origen > 0),
+    CONSTRAINT chk_mov_inv_camara_dest CHECK (id_camara_destino > 0),
+    CONSTRAINT chk_mov_inv_despacho CHECK (id_despacho > 0)
 );
 
 -- =========================================================
@@ -244,10 +262,12 @@ CREATE TABLE pulpeos(
     id_bloque INT NOT NULL REFERENCES bloques_fruta(id_bloque),
     fecha_hora TIMESTAMP NOT NULL,
     numero_pulpeo INT,
-    temperatura_objetivo NUMERIC(5,2),
-    temperatura_promedio NUMERIC(5,2),
+    temperatura_objetivo NUMERIC(5,2) NOT NULL,
+    temperatura_promedio NUMERIC(5,2) NOT NULL,
     id_usuario INT REFERENCES usuarios(id_usuario),
-    observaciones VARCHAR(250)
+    observaciones VARCHAR(250),
+    CONSTRAINT chk_pulpeo_bloque CHECK (id_bloque > 0),
+    CONSTRAINT chk_pulpeo_usuario CHECK (id_usuario > 0)
 );
 
 -- Detalle: dentro de un pulpeo de bloque, cuántas tarimas de cada lote
@@ -259,7 +279,9 @@ CREATE TABLE pulpeos_detalle(
     cantidad_tarimas INT NOT NULL,
     temperatura NUMERIC(5,2),
     fecha_hora TIMESTAMP NOT NULL,
-    UNIQUE(id_pulpeo, id_lote)
+    UNIQUE(id_pulpeo, id_lote),
+    CONSTRAINT chk_pulpeo_det_pulpeo CHECK (id_pulpeo > 0),
+    CONSTRAINT chk_pulpeo_det_lote CHECK (id_lote > 0)
 );
 
 -- Evidencia fotográfica: varias fotos por cada línea de detalle de pulpeo
@@ -267,7 +289,8 @@ CREATE TABLE pulpeos_evidencia(
     id_evidencia SERIAL PRIMARY KEY,
     id_pulpeo_detalle INT NOT NULL REFERENCES pulpeos_detalle(id_pulpeo_detalle),
     foto_url VARCHAR(500) NOT NULL,
-    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_pulpeo_evid_pulpeo_det CHECK (id_pulpeo_detalle > 0)
 );
 
 -- =========================================================
@@ -454,7 +477,24 @@ insert into empleados (nombre,apellidos,turno,zona) values ('Operador1','Operado
 insert into empleados (nombre,apellidos,turno,zona) values ('Operador2','Operador2_tecoman','COMPLETO','TECOMAN, COLIMA');
 insert into empleados (nombre,apellidos,turno,zona) values ('Operador3','Operador3_tecoman','COMPLETO','TECOMAN, COLIMA');
 
-
-
-
-
+DROP TABLE 
+pulpeos_evidencia,
+pulpeos_detalle,
+pulpeos,
+movimientos_inventario,
+despachos_detalle,
+despachos,
+cedis_cliente,
+transportes,
+bloques_lote_detalle,
+bloques_fruta,
+lotes,
+sku_pt,
+fincas,
+productores,
+ocupaciones_camaras,
+mantenimientos,
+camaras,
+usuarios,
+roles,
+empleados;

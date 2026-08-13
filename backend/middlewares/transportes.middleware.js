@@ -1,4 +1,5 @@
 // Valida el body al crear o actualizar un transporte
+// Alineado al esquema: todos los campos NOT NULL, incluido 'inocuidad' INT.
 export const validarTransporte = (req, res, next) => {
     const {
         razon_social,
@@ -6,7 +7,8 @@ export const validarTransporte = (req, res, next) => {
         celular,
         placas_tracto,
         placas_caja,
-        no_economico_caja
+        no_economico_caja,
+        inocuidad
     } = req.body;
 
     if (
@@ -20,48 +22,62 @@ export const validarTransporte = (req, res, next) => {
         });
     }
     if (
-        nombre_operador !== undefined &&
-        nombre_operador !== null &&
-        (typeof nombre_operador !== "string" || nombre_operador.length > 100)
+        !nombre_operador ||
+        typeof nombre_operador !== "string" ||
+        nombre_operador.trim() === "" ||
+        nombre_operador.length > 100
     ) {
         return res.status(400).json({
-            error: 'El campo "nombre_operador" debe ser texto y máximo 100 caracteres'
+            error: 'El campo "nombre_operador" es obligatorio, debe ser texto y máximo 100 caracteres'
         });
     }
     if (
-        celular !== undefined &&
-        celular !== null &&
-        (typeof celular !== "string" || celular.length > 10)
+        !celular ||
+        typeof celular !== "string" ||
+        celular.trim() === "" ||
+        celular.length > 10
     ) {
         return res.status(400).json({
-            error: 'El campo "celular" debe ser texto y máximo 10 caracteres'
+            error: 'El campo "celular" es obligatorio, debe ser texto y máximo 10 caracteres'
         });
     }
     if (
-        placas_tracto !== undefined &&
-        placas_tracto !== null &&
-        (typeof placas_tracto !== "string" || placas_tracto.length > 10)
+        !placas_tracto ||
+        typeof placas_tracto !== "string" ||
+        placas_tracto.trim() === "" ||
+        placas_tracto.length > 10
     ) {
         return res.status(400).json({
-            error: 'El campo "placas_tracto" debe ser texto y máximo 10 caracteres'
+            error: 'El campo "placas_tracto" es obligatorio, debe ser texto y máximo 10 caracteres'
         });
     }
     if (
-        placas_caja !== undefined &&
-        placas_caja !== null &&
-        (typeof placas_caja !== "string" || placas_caja.length > 10)
+        !placas_caja ||
+        typeof placas_caja !== "string" ||
+        placas_caja.trim() === "" ||
+        placas_caja.length > 10
     ) {
         return res.status(400).json({
-            error: 'El campo "placas_caja" debe ser texto y máximo 10 caracteres'
+            error: 'El campo "placas_caja" es obligatorio, debe ser texto y máximo 10 caracteres'
         });
     }
     if (
-        no_economico_caja !== undefined &&
-        no_economico_caja !== null &&
-        (typeof no_economico_caja !== "string" || no_economico_caja.length > 10)
+        !no_economico_caja ||
+        typeof no_economico_caja !== "string" ||
+        no_economico_caja.trim() === "" ||
+        no_economico_caja.length > 10
     ) {
         return res.status(400).json({
-            error: 'El campo "no_economico_caja" debe ser texto y máximo 10 caracteres'
+            error: 'El campo "no_economico_caja" es obligatorio, debe ser texto y máximo 10 caracteres'
+        });
+    }
+    if (
+        inocuidad === undefined ||
+        inocuidad === null ||
+        isNaN(Number(inocuidad))
+    ) {
+        return res.status(400).json({
+            error: 'El campo "inocuidad" es obligatorio y debe ser numérico'
         });
     }
     next();

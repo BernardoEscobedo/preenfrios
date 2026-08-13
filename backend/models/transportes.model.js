@@ -25,14 +25,15 @@ const getTransporteById = async (id_transporte) => {
     return result.rows[0];
 };
 
-// Crear transporte
+// Crear transporte (incluye 'inocuidad' INT NOT NULL)
 const createTransporte = async ({
     razon_social,
     nombre_operador,
     celular,
     placas_tracto,
     placas_caja,
-    no_economico_caja
+    no_economico_caja,
+    inocuidad
 }) => {
     const result = await db.query(
         `
@@ -42,9 +43,10 @@ const createTransporte = async ({
             celular,
             placas_tracto,
             placas_caja,
-            no_economico_caja
+            no_economico_caja,
+            inocuidad
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
         `,
         [
@@ -53,7 +55,8 @@ const createTransporte = async ({
             celular,
             placas_tracto,
             placas_caja,
-            no_economico_caja
+            no_economico_caja,
+            inocuidad
         ]
     );
     return result.rows[0];
@@ -68,7 +71,8 @@ const updateTransporte = async (
         celular,
         placas_tracto,
         placas_caja,
-        no_economico_caja
+        no_economico_caja,
+        inocuidad
     }
 ) => {
     const result = await db.query(
@@ -80,8 +84,9 @@ const updateTransporte = async (
             celular = $3,
             placas_tracto = $4,
             placas_caja = $5,
-            no_economico_caja = $6
-        WHERE id_transporte = $7
+            no_economico_caja = $6,
+            inocuidad = $7
+        WHERE id_transporte = $8
         RETURNING *
         `,
         [
@@ -91,6 +96,7 @@ const updateTransporte = async (
             placas_tracto,
             placas_caja,
             no_economico_caja,
+            inocuidad,
             id_transporte
         ]
     );

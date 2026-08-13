@@ -9,6 +9,9 @@ import { db } from "../database/connection.database.js";
 // El descuento de cámara (ocupaciones) lo maneja el trigger
 // fn_sync_ocupacion_movimiento al registrar movimientos_inventario
 // tipo=3 (salida_despacho). Ver módulo movimientos_inventario.
+//
+// Esquema: orden_venta, cita, fecha_cita, temperatura_salida,
+// estado y observaciones son NOT NULL en el encabezado.
 // =========================================================
 
 // Obtener todos los despachos (con datos de transporte y cliente)
