@@ -108,8 +108,8 @@ const profileUsuario = async(req,res)=>{
             ok:true,
             usuario_:{
                 id_usuario: usuario_.id_usuario,
-                usuario: usuario_.correo,
-                id_role: usuario_.id_empleado,
+                usuario: usuario_.usuario,
+                id_empleado: usuario_.id_empleado,
                 id_role: usuario_.id_role
             }
         })
