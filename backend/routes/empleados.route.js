@@ -1,22 +1,42 @@
-const { Router } = require('express');
-const empleadosController = require('../controllers/empleados.controller');
-const { validarEmpleado, validarIdEmpleado } = require('../middlewares/empleados.middleware');
+import { Router } from "express";
+import { empleadosController } from "../controllers/empleados.controller.js";
+import {
+    validarEmpleado,
+    validarIdEmpleado
+} from "../middlewares/empleados.middleware.js";
 
 const router = Router();
 
 // GET /api/empleados
-router.get('/', empleadosController.getEmpleados);
+router.get("/", empleadosController.getEmpleados);
 
 // GET /api/empleados/:id
-router.get('/:id', validarIdEmpleado, empleadosController.getEmpleadoById);
+router.get(
+    "/:id",
+    validarIdEmpleado,
+    empleadosController.getEmpleadoById
+);
 
 // POST /api/empleados
-router.post('/', validarEmpleado, empleadosController.createEmpleado);
+router.post(
+    "/",
+    validarEmpleado,
+    empleadosController.createEmpleado
+);
 
 // PUT /api/empleados/:id
-router.put('/:id', validarIdEmpleado, validarEmpleado, empleadosController.updateEmpleado);
+router.put(
+    "/:id",
+    validarIdEmpleado,
+    validarEmpleado,
+    empleadosController.updateEmpleado
+);
 
 // DELETE /api/empleados/:id
-router.delete('/:id', validarIdEmpleado, empleadosController.deleteEmpleado);
+router.delete(
+    "/:id",
+    validarIdEmpleado,
+    empleadosController.deleteEmpleado
+);
 
-export default router
+export default router;
