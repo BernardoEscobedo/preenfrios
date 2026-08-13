@@ -6,6 +6,10 @@ import empleadosRouter from "./routes/empleados.route.js";
 import camarasRouter from "./routes/camaras.route.js";
 import mantenimientosRouter from "./routes/mantenimientos.route.js";
 import ocupacionesRouter from "./routes/ocupaciones.route.js";
+import productoresRouter from "./routes/productores.route.js";
+import fincasRouter from "./routes/fincas.route.js";
+import skuPtRouter from "./routes/skuPt.route.js";
+import lotesRouter from "./routes/lotes.route.js";
 
 const app = express();
 
@@ -49,6 +53,26 @@ app.use(
 app.use(
     "/api/preenfrio/ocupaciones",
     ocupacionesRouter
+);
+
+app.use(
+    "/api/preenfrio/productores",
+    productoresRouter
+);
+
+app.use(
+    "/api/preenfrio/fincas",
+    fincasRouter
+);
+
+app.use(
+    "/api/preenfrio/skupt",
+    skuPtRouter
+);
+
+app.use(
+    "/api/preenfrio/lotes",
+    lotesRouter
 );
 
 // CONFIGURACIÓN
