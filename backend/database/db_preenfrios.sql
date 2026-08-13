@@ -14,17 +14,12 @@ id_role serial primary key,
 tipo varchar(50) unique not null 
 ); 
 
-select *from roles
-insert into roles (tipo) values('OPERADOR');
-
-alter table usuarios add column id_role int references roles(id_role);
-alter table usuarios drop column id_roles
-
 CREATE TABLE usuarios(
     id_usuario SERIAL PRIMARY KEY,
     usuario VARCHAR(60),
     password_hash VARCHAR(60),
     id_empleado INT REFERENCES empleados(id_empleado)
+    id_role INT REFERENCES roles(id_role)
 );
 
 CREATE TABLE camaras(

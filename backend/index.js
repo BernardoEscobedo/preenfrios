@@ -1,27 +1,20 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-
 import usuariosRouter from "./routes/usuarios.route.js";
 import empleadosRouter from "./routes/empleados.route.js";
-
+import camarasRouter from "./routes/camaras.route.js";
+import mantenimientosRouter from "./routes/mantenimientos.route.js";
+import ocupacionesRouter from "./routes/ocupaciones.route.js";
 
 const app = express();
 
-
-// ===============================
 // CORS
-// ===============================
-
 app.use(cors({
     origin: "http://localhost:5173"
 }));
 
-
-// ===============================
 // MIDDLEWARES
-// ===============================
-
 app.use(express.json());
 
 app.use(
@@ -32,11 +25,7 @@ app.use(
 
 app.use(express.static("public"));
 
-
-// ===============================
 // RUTAS
-// ===============================
-
 app.use(
     "/api/preenfrio/usuarios",
     usuariosRouter
@@ -47,11 +36,22 @@ app.use(
     empleadosRouter
 );
 
+app.use(
+    "/api/preenfrio/camaras",
+    camarasRouter
+);
 
-// ===============================
+app.use(
+    "/api/preenfrio/mantenimientos",
+    mantenimientosRouter
+);
+
+app.use(
+    "/api/preenfrio/ocupaciones",
+    ocupacionesRouter
+);
+
 // CONFIGURACIÓN
-// ===============================
-
 const PORT = process.env.PORT || 3000;
 
 
@@ -64,11 +64,7 @@ console.log("ENV:", {
         : "Not set",
 });
 
-
-// ===============================
 // SERVIDOR
-// ===============================
-
 app.listen(
     PORT,
     () => {
