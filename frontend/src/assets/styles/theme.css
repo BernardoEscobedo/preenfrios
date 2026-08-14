@@ -1,0 +1,29 @@
+/* =========================================================
+   PALETA BANANO — tonos suaves (no saturados)
+   Verde hoja de plátano + amarillo maduro apagado + crema.
+   Reutilizable en toda la app (importar en main.js).
+   ========================================================= */
+:root {
+    /* Amarillos maduros suaves */
+    --amarillo-claro: #F4EAB6;   /* fondo suave / hovers */
+    --amarillo:       #E6D27A;   /* acento amarillo apagado */
+    --amarillo-fuerte:#D9BE5C;   /* bordes / detalles */
+
+    /* Verdes hoja suaves */
+    --verde-claro:    #A9BE8E;   /* apoyos / bordes suaves */
+    --verde:          #6E8B54;   /* color principal (botones) */
+    --verde-oscuro:   #55703F;   /* hover / texto sobre claro */
+
+    /* Neutros crema */
+    --crema:          #FAF7EC;   /* fondo de tarjeta */
+    --crema-fondo:    #F3EFDF;   /* fondo de página */
+    --texto:          #3A3F33;   /* texto principal (verde grisáceo) */
+    --texto-suave:    #6B7060;   /* texto secundario */
+    --borde:          #DCD6BE;   /* bordes de inputs */
+    --error:          #B5533F;   /* rojo terracota apagado */
+    --blanco:         #FFFFFF;
+
+    /* Sombra suave */
+    --sombra: 0 10px 30px rgba(85, 112, 63, 0.12);
+    --radio: 14px;
+}
