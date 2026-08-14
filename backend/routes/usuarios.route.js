@@ -9,8 +9,8 @@ router.get('/profile', verifyToken, usuariosController.profileUsuario)//ruta pro
 
 //rutas para admin
 router.get('/usuarios', verifyToken, verifyAdmin, usuariosController.getUsuarios )
-router.get('/usuario/:id_usuario',verifyToken, usuariosController.getUsuarioById)
-router.post('/registrarusuario', usuariosController.createUsuario)
+router.get('/usuario/:id_usuario',verifyToken, verifyAdmin, usuariosController.getUsuarioById)
+router.post('/registrarusuario', verifyToken, verifyAdmin, verifyCoordinador, usuariosController.createUsuario)
 router.put('/actualizarusuario/:id_usuario', verifyToken, verifyAdmin, verifyCoordinador, usuariosController.updateUsuario)
 
 export default router

@@ -1,52 +1,23 @@
 import { Router } from "express";
 import { skuPtController } from "../controllers/skuPt.controller.js";
-import {
-    validarSkuPt,
-    validarIdSkuPt
-} from "../middlewares/skuPt.middleware.js";
-
+import { validarSkuPt, validarIdSkuPt } from "../middlewares/skuPt.middleware.js";
+import { verifyToken, verifyAdmin, verifyCoordinador, verifySupervisor, verifyOperativo } from "../middlewares/jwt.middlewares.js";
 
 const router = Router();
 
-
 // Obtener SKU
-router.get(
-    "/skupt",
-    skuPtController.getSkuPt
-);
-
+router.get("/skupt", verifyToken, skuPtController.getSkuPt);
 
 // Obtener SKU por ID
-router.get(
-    "/sku/:id",
-    validarIdSkuPt,
-    skuPtController.getSkuPtById
-);
-
+router.get("/sku/:id", verifyToken, validarIdSkuPt, skuPtController.getSkuPtById);
 
 // Registrar SKU
-router.post(
-    "/registrarsku",
-    validarSkuPt,
-    skuPtController.createSkuPt
-);
-
+router.post("/registrarsku", verifyToken, verifyAdmin, verifyCoordinador, validarSkuPt, skuPtController.createSkuPt);
 
 // Actualizar SKU
-router.put(
-    "/actualizarsku/:id",
-    validarIdSkuPt,
-    validarSkuPt,
-    skuPtController.updateSkuPt
-);
-
+router.put("/actualizarsku/:id", verifyToken, verifyAdmin, verifyCoordinador, validarIdSkuPt, validarSkuPt, skuPtController.updateSkuPt);
 
 // Eliminar SKU
-router.delete(
-    "/eliminarsku/:id",
-    validarIdSkuPt,
-    skuPtController.deleteSkuPt
-);
-
+router.delete( "/eliminarsku/:id", verifyToken, verifyAdmin, validarIdSkuPt, skuPtController.deleteSkuPt);
 
 export default router;
