@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { despachosController } from "../controllers/despachos.controller.js";
 import { validarDespacho, validarDetalle, validarIdDespacho, validarIdDetalle } from "../middlewares/despachos.middleware.js";
-import { verifyToken, verifyAdmin, verifyCoordinador, verifySupervisor } from "../middlewares/jwt.middlewares.js";
+import { verifyToken, verifyAdmin, verifyCoordinador, verifySupervisor, verifyOperativo} from "../middlewares/jwt.middlewares.js";
 
 const router = Router();
 
@@ -9,17 +9,17 @@ const router = Router();
 // (operativo NO captura despachos)
 
 // GET todos (ver)
-router.get("/despachos", verifyToken, verifySupervisor, despachosController.getDespachos);
+router.get("/despachos", verifyToken, verifyOperativo, despachosController.getDespachos);
 // GET encabezado por id (ver)
-router.get("/despacho/:id", verifyToken, verifySupervisor, validarIdDespacho, despachosController.getDespachoById);
+router.get("/despacho/:id", verifyToken, verifyOperativo, validarIdDespacho, despachosController.getDespachoById);
 // GET encabezado + detalle (ver)
-router.get("/despacho/:id/detalle", verifyToken, verifySupervisor, validarIdDespacho, despachosController.getDespachoConDetalle);
+router.get("/despacho/:id/detalle", verifyToken, verifyOperativo, validarIdDespacho, despachosController.getDespachoConDetalle);
 // POST crear despacho (crear) -> era "cualquiera autenticado"; ahora supervisor+
-router.post("/registrardespacho", verifyToken, verifySupervisor, validarDespacho, despachosController.createDespacho);
+router.post("/registrardespacho", verifyToken, verifyOperativo, validarDespacho, despachosController.createDespacho);
 // POST agregar línea de detalle (crear)
-router.post("/despacho/:id/detalle", verifyToken, verifySupervisor, validarIdDespacho, validarDetalle, despachosController.addDetalle);
+router.post("/despacho/:id/detalle", verifyToken, verifyOperativo, validarIdDespacho, validarDetalle, despachosController.addDetalle);
 // PUT actualizar encabezado (editar)
-router.put("/actualizardespacho/:id", verifyToken, verifyCoordinador, validarIdDespacho, validarDespacho, despachosController.updateDespacho);
+router.put("/actualizardespacho/:id", verifyToken, verifyOperativo, validarIdDespacho, validarDespacho, despachosController.updateDespacho);
 // DELETE una línea de detalle (eliminar)
 router.delete("/detalle/:id_detalle", verifyToken, verifyAdmin, validarIdDetalle, despachosController.deleteDetalle);
 // DELETE despacho completo (eliminar)
