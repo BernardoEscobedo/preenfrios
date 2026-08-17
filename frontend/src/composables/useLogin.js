@@ -1,5 +1,6 @@
 import { ref, reactive, computed } from "vue";
 import { authService } from "../services/auth.service.js";
+import { useAuth } from "./useAuth.js";
 
 // Composable que concentra TODA la lógica del login:
 // estado del formulario, validación, envío y manejo de errores.
@@ -13,6 +14,8 @@ export function useLogin() {
     const cargando = ref(false);
     const errorMsg = ref("");
     const mostrarPassword = ref(false);
+
+    const { refrescarUsuario } = useAuth();
 
     // Validación mínima en cliente
     const formValido = computed(
@@ -45,6 +48,13 @@ export function useLogin() {
                 if (data.usuario) {
                     localStorage.setItem("usuario", JSON.stringify(data.usuario));
                 }
+
+                // Actualiza el ref reactivo compartido (useAuth) con los datos
+                // recién guardados. Sin esto, si el usuario cierra sesión e
+                // inicia con otra cuenta SIN recargar la página, el dashboard
+                // sigue mostrando el estado viejo (o vacío).
+                refrescarUsuario();
+
                 if (typeof onSuccess === "function") {
                     onSuccess(data);
                 }
@@ -53,7 +63,6 @@ export function useLogin() {
                     (data && data.msg) || "No fue posible iniciar sesión.";
             }
         } catch (error) {
-            // Mensajes según el status del backend
             const status = error?.response?.status;
             const backendMsg = error?.response?.data?.msg;
 
