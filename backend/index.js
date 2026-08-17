@@ -20,10 +20,17 @@ import pulpeosRouter from "./routes/pulpeos.route.js";
 
 const app = express();
 
-// CORS
-app.use(cors({
-    origin: "http://localhost:5173"
-}));
+// CORS: el origen del frontend se toma de la variable de entorno CORS_ORIGIN.
+// En el .env agrega:  CORS_ORIGIN=http://localhost:5173
+// Para varios orígenes, sepáralos por coma:  CORS_ORIGIN=http://localhost:5173,https://mi-dominio.com
+const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+const allowedOrigins = corsOrigin.split(",").map((o) => o.trim());
+
+app.use(
+    cors({
+        origin: allowedOrigins
+    })
+);
 
 // MIDDLEWARES
 app.use(express.json());
@@ -37,106 +44,35 @@ app.use(
 app.use(express.static("public"));
 
 // RUTAS
-app.use(
-    "/api/preenfrio/usuarios",
-    usuariosRouter
-);
-
-app.use(
-    "/api/preenfrio/empleados",
-    empleadosRouter
-);
-
-app.use(
-    "/api/preenfrio/camaras",
-    camarasRouter
-);
-
-app.use(
-    "/api/preenfrio/mantenimientos",
-    mantenimientosRouter
-);
-
-app.use(
-    "/api/preenfrio/ocupaciones",
-    ocupacionesRouter
-);
-
-app.use(
-    "/api/preenfrio/productores",
-    productoresRouter
-);
-
-app.use(
-    "/api/preenfrio/fincas",
-    fincasRouter
-);
-
-app.use(
-    "/api/preenfrio/skupt",
-    skuPtRouter
-);
-
-app.use(
-    "/api/preenfrio/lotes",
-    lotesRouter
-);
-
-app.use(
-    "/api/preenfrio/bloques",
-    bloquesFrutaRouter
-);
-
-app.use(
-    "/api/preenfrio/bloqueslotedetalle",
-    bloquesLoteDetalleRouter
-);
-
-app.use(
-    "/api/preenfrio/cedisclientes",
-    cedisClienteRouter
-);
-
-app.use(
-    "/api/preenfrio/transportes",
-    transportesRouter
-);
-
-app.use(
-    "/api/preenfrio/despachos",
-    despachosRouter
-);
-
-app.use(
-    "/api/preenfrio/movimientos",
-    movimientosInventarioRouter
-);
-
-app.use(
-    "/api/preenfrio/pulpeos",
-    pulpeosRouter
-);
-
+app.use("/api/preenfrio/usuarios", usuariosRouter);
+app.use("/api/preenfrio/empleados", empleadosRouter);
+app.use("/api/preenfrio/camaras", camarasRouter);
+app.use("/api/preenfrio/mantenimientos", mantenimientosRouter);
+app.use("/api/preenfrio/ocupaciones", ocupacionesRouter);
+app.use("/api/preenfrio/productores", productoresRouter);
+app.use("/api/preenfrio/fincas", fincasRouter);
+app.use("/api/preenfrio/skupt", skuPtRouter);
+app.use("/api/preenfrio/lotes", lotesRouter);
+app.use("/api/preenfrio/bloques", bloquesFrutaRouter);
+app.use("/api/preenfrio/bloqueslotedetalle", bloquesLoteDetalleRouter);
+app.use("/api/preenfrio/cedisclientes", cedisClienteRouter);
+app.use("/api/preenfrio/transportes", transportesRouter);
+app.use("/api/preenfrio/despachos", despachosRouter);
+app.use("/api/preenfrio/movimientos", movimientosInventarioRouter);
+app.use("/api/preenfrio/pulpeos", pulpeosRouter);
 
 // CONFIGURACIÓN
 const PORT = process.env.PORT || 3000;
-
 
 console.log("ENV:", {
     host: process.env.PGHOST,
     database: process.env.PGDATABASE,
     user: process.env.PGUSER,
-    password: process.env.PGPASSWORD
-        ? "***"
-        : "Not set",
+    password: process.env.PGPASSWORD ? "***" : "Not set",
+    corsOrigin: allowedOrigins
 });
 
 // SERVIDOR
-app.listen(
-    PORT,
-    () => {
-        console.log(
-            `🚀 Servidor corriendo en puerto ${PORT}`
-        );
-    }
-);
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
