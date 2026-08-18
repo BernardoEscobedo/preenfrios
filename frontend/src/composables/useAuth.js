@@ -6,12 +6,14 @@ import {
     ROLE_LABEL
 } from "../config/permissions.js";
 
-// Estado del usuario (leído de localStorage al iniciar la app)
+// Estado del usuario (leído de sessionStorage al iniciar la app)
+// sessionStorage se borra automáticamente al cerrar la pestaña,
+// por lo que la sesión NO persiste entre cierres del navegador.
 const usuario = ref(cargarUsuario());
 
 function cargarUsuario() {
     try {
-        const raw = localStorage.getItem("usuario");
+        const raw = sessionStorage.getItem("usuario");
         return raw ? JSON.parse(raw) : null;
     } catch {
         return null;
@@ -33,14 +35,13 @@ export function useAuth() {
         () => usuario.value?.usuario || usuario.value?.correo || "Usuario"
     );
 
-    const estaAutenticado = computed(() => !!localStorage.getItem("token"));
+    const estaAutenticado = computed(() => !!sessionStorage.getItem("token"));
 
     // Helpers por acción
     const puedeVer = (mod) => can(idRole.value, mod, "view");
     const puedeCrear = (mod) => can(idRole.value, mod, "create");
     const puedeEditar = (mod) => can(idRole.value, mod, "edit");
     const puedeEliminar = (mod) => can(idRole.value, mod, "delete");
-
     const puedeAccederModulo = (mod) => canAccessModule(idRole.value, mod);
     const modulosVisibles = computed(() => visibleModules(idRole.value));
 
@@ -49,8 +50,8 @@ export function useAuth() {
     };
 
     const cerrarSesion = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("usuario");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("usuario");
         usuario.value = null;
     };
 

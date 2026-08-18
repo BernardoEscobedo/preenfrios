@@ -33,28 +33,28 @@ export function useLogin() {
     // onSuccess: callback que ejecuta el componente (ej. redirigir con el router)
     const iniciarSesion = async (onSuccess) => {
         errorMsg.value = "";
-
         if (!formValido.value) {
             errorMsg.value = "Ingresa tu usuario y contraseña.";
             return;
         }
-
         cargando.value = true;
         try {
             const data = await authService.login(form.usuario, form.password);
-
             if (data && data.ok && data.token) {
-                localStorage.setItem("token", data.token);
+                // Guardamos en sessionStorage (no localStorage) para que la
+                // sesión se borre automáticamente al cerrar la pestaña.
+                sessionStorage.setItem("token", data.token);
                 if (data.usuario) {
-                    localStorage.setItem("usuario", JSON.stringify(data.usuario));
+                    sessionStorage.setItem(
+                        "usuario",
+                        JSON.stringify(data.usuario)
+                    );
                 }
-
                 // Actualiza el ref reactivo compartido (useAuth) con los datos
                 // recién guardados. Sin esto, si el usuario cierra sesión e
                 // inicia con otra cuenta SIN recargar la página, el dashboard
                 // sigue mostrando el estado viejo (o vacío).
                 refrescarUsuario();
-
                 if (typeof onSuccess === "function") {
                     onSuccess(data);
                 }
@@ -65,7 +65,6 @@ export function useLogin() {
         } catch (error) {
             const status = error?.response?.status;
             const backendMsg = error?.response?.data?.msg;
-
             if (status === 404) {
                 errorMsg.value = "Usuario no encontrado.";
             } else if (status === 401) {

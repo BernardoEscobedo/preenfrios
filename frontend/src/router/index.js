@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { MODULES, canAccessModule } from "../config/permissions.js";
-
 import DashboardLayout from "../layouts/DashboardLayout.vue";
 import DashboardHome from "../views/Dashboard/DashboardHome.vue";
 import ModulePlaceholder from "../views/Dashboard/ModulePlaceholder.vue";
@@ -12,7 +11,9 @@ const LoginView = () => import("../views/Login/LoginView.vue");
 
 function getIdRole() {
     try {
-        const u = JSON.parse(localStorage.getItem("usuario") || "null");
+        // Leemos de sessionStorage (no localStorage) para que la sesión
+        // se borre automáticamente al cerrar la pestaña.
+        const u = JSON.parse(sessionStorage.getItem("usuario") || "null");
         const r = u?.role ?? u?.id_role ?? null;
         return r !== null ? Number(r) : null;
     } catch {
@@ -61,15 +62,14 @@ const router = createRouter({
 
 // Guard: sesión + permiso de acceso al módulo
 router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem("token");
-
+    // Leemos el token de sessionStorage (no localStorage) para que la sesión
+    // no persista entre cierres de pestaña.
+    const token = sessionStorage.getItem("token");
     if (to.name === "login") {
         return token ? next({ name: "dashboard" }) : next();
     }
-
     if (to.meta.requiresAuth) {
         if (!token) return next({ name: "login" });
-
         if (to.meta.moduleKey) {
             const idRole = getIdRole();
             if (!canAccessModule(idRole, to.meta.moduleKey)) {
@@ -77,7 +77,6 @@ router.beforeEach((to, from, next) => {
             }
         }
     }
-
     next();
 });
 
