@@ -9,6 +9,14 @@ import AccesoDenegado from "../views/Dashboard/AccesoDenegado.vue";
 // Este router asume esa ruta; ajústala si tu Login está en otra ubicación.
 const LoginView = () => import("../views/Login/LoginView.vue");
 
+// Vistas reales de módulos ya implementados.
+// A medida que construyas más catálogos, agrégalos aquí y exclúyelos
+// de la generación automática en MODULOS_CON_VISTA.
+const CamarasView = () => import("../views/Camaras/CamarasView.vue");
+
+// Módulos que YA tienen su vista real (no usan ModulePlaceholder).
+const MODULOS_CON_VISTA = ["camaras"];
+
 function getIdRole() {
     try {
         // Leemos de sessionStorage (no localStorage) para que la sesión
@@ -21,8 +29,11 @@ function getIdRole() {
     }
 }
 
-// Rutas hijas por módulo (excepto dashboard). Cada una lleva meta.moduleKey.
-const moduleRoutes = MODULES.filter((m) => m.key !== "dashboard").map((m) => ({
+// Rutas hijas por módulo (excepto dashboard y los que ya tienen vista real).
+// Cada una lleva meta.moduleKey.
+const moduleRoutes = MODULES.filter(
+    (m) => m.key !== "dashboard" && !MODULOS_CON_VISTA.includes(m.key)
+).map((m) => ({
     path: m.path,
     name: m.key,
     component: ModulePlaceholder, // reemplazar por la vista real de cada módulo
@@ -42,6 +53,13 @@ const routes = [
                 name: "dashboard",
                 component: DashboardHome,
                 meta: { requiresAuth: true, moduleKey: "dashboard" }
+            },
+            // Vista real de Cámaras
+            {
+                path: "camaras",
+                name: "camaras",
+                component: CamarasView,
+                meta: { requiresAuth: true, moduleKey: "camaras" }
             },
             ...moduleRoutes,
             {

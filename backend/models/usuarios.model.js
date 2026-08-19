@@ -38,9 +38,12 @@ const getUsuarioByUser = async(usuario)=>{
         u.usuario,
         u.password_hash,
         u.id_empleado,
-        u.id_role
+        u.id_role,
+        e.nombre AS emp_nombre,
+        e.apellidos AS emp_apellidos
         FROM usuarios u
         JOIN roles r ON u.id_role = r.id_role
+        LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
         WHERE u.usuario = $1
         `,
         values: [usuario]
@@ -71,24 +74,19 @@ const getUsuarioById = async (id_usuario) => {
 const updateUsuario = async(id_usuario, updateData)=>{
     const validFields = ['usuario', 'password_hash', 'id_empleado', 'id_role'] // campos actualizables
     const fieldsToUpdate ={}
-
     Object.keys(updateData).forEach(key=>{
         if(validFields.includes(key) && updateData[key] !== undefined){
             fieldsToUpdate[key] = updateData[key]
         }
     });
-
     if(Object.keys(fieldsToUpdate).length === 0){
         throw new Error('No se proporcionaron campos para actualizar');
     }
-
      const setClause = Object.keys(fieldsToUpdate)
      .map((key,index) => `${key} = $${index +1}`)
      .join(', ');
-
      const values = Object.values(fieldsToUpdate)
      values.push(id_usuario)
-
      const query ={
         text:`
         UPDATE usuarios
@@ -98,7 +96,6 @@ const updateUsuario = async(id_usuario, updateData)=>{
         `,
         values: values
      }
-
      const {rows} = await db.query(query)
      return rows[0]
 }

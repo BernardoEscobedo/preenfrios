@@ -12,10 +12,12 @@ const api = axios.create({
     }
 });
 
-// Interceptor de request: adjunta el token JWT si existe
+// Interceptor de request: adjunta el token JWT si existe.
+// Usamos sessionStorage (no localStorage) para que la sesión se borre
+// automáticamente al cerrar la pestaña.
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -29,7 +31,8 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("usuario");
             // Redirección opcional al login; se maneja desde el router.
         }
         return Promise.reject(error);
