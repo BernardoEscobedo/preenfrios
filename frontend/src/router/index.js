@@ -13,9 +13,10 @@ const LoginView = () => import("../views/Login/LoginView.vue");
 // A medida que construyas más catálogos, agrégalos aquí y exclúyelos
 // de la generación automática en MODULOS_CON_VISTA.
 const CamarasView = () => import("../views/Camaras/CamarasView.vue");
+const SkuView = () => import("../views/Sku/SkuView.vue");
 
 // Módulos que YA tienen su vista real (no usan ModulePlaceholder).
-const MODULOS_CON_VISTA = ["camaras"];
+const MODULOS_CON_VISTA = ["camaras","sku"];
 
 function getIdRole() {
     try {
@@ -60,6 +61,12 @@ const routes = [
                 name: "camaras",
                 component: CamarasView,
                 meta: { requiresAuth: true, moduleKey: "camaras" }
+            },
+            {
+                path: "sku",
+                name: "sku",
+                component: SkuView,
+                meta: { requiresAuth: true, moduleKey: "sku" }
             },
             ...moduleRoutes,
             {
