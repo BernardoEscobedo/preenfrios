@@ -31,9 +31,31 @@ export function useAuth() {
         idRole.value ? ROLE_LABEL[idRole.value] || "Desconocido" : ""
     );
 
+    // Nombre de la cuenta (login) — se mantiene por compatibilidad
     const nombreUsuario = computed(
         () => usuario.value?.usuario || usuario.value?.correo || "Usuario"
     );
+
+    // Nombre del EMPLEADO para mostrar en el saludo del dashboard.
+    // Intenta varios nombres de campo comunes que el backend podría enviar.
+    // Si ninguno existe, cae de respaldo al nombre de usuario.
+    // ► Asegúrate de que tu backend (loginUsuario) devuelva el nombre del
+    //   empleado en alguno de estos campos: nombre_empleado, nombreEmpleado,
+    //   nombre_completo, empleado o nombre.
+    const nombreEmpleado = computed(() => {
+        const u = usuario.value;
+        return (
+            u?.nombre_empleado ||
+            u?.nombreEmpleado ||
+            u?.nombre_completo ||
+            u?.nombreCompleto ||
+            u?.empleado ||
+            u?.nombre ||
+            u?.usuario ||
+            u?.correo ||
+            "Usuario"
+        );
+    });
 
     const estaAutenticado = computed(() => !!sessionStorage.getItem("token"));
 
@@ -60,6 +82,7 @@ export function useAuth() {
         idRole,
         roleLabel,
         nombreUsuario,
+        nombreEmpleado,
         estaAutenticado,
         puedeVer,
         puedeCrear,

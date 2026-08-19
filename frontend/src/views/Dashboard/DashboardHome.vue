@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from "vue";
 import { useAuth } from "../../composables/useAuth.js";
-import { can } from "../../config/permissions.js";
 
-const { nombreUsuario, roleLabel, idRole, modulosVisibles } = useAuth();
+// Ya NO necesitamos "can" aquí porque quitamos los badges de permisos
+// y las tarjetas KPI. Solo mostramos el nombre y los módulos.
+const { nombreEmpleado, roleLabel, idRole, modulosVisibles } = useAuth();
 
 // Descripción de lo que puede hacer el rol
 const descripcionRol = computed(() => {
@@ -21,60 +22,28 @@ const descripcionRol = computed(() => {
     }
 });
 
-// Tarjetas: módulos visibles distintos de 'dashboard', con sus permisos, agrupados
+// Tarjetas: módulos visibles distintos de 'dashboard', agrupados.
+// Ya NO calculamos permisos por tarjeta (se quitaron los badges Ver/Crear).
 const tarjetasPorGrupo = computed(() => {
     const map = {};
     for (const m of modulosVisibles.value) {
         if (m.key === "dashboard") continue;
         if (!map[m.group]) map[m.group] = [];
-        map[m.group].push({
-            ...m,
-            perms: {
-                view: can(idRole.value, m.key, "view"),
-                create: can(idRole.value, m.key, "create"),
-                edit: can(idRole.value, m.key, "edit"),
-                delete: can(idRole.value, m.key, "delete")
-            }
-        });
+        map[m.group].push({ ...m });
     }
     return map;
-});
-
-// KPIs simples basados en accesos del rol
-const kpis = computed(() => {
-    const mods = modulosVisibles.value.filter((m) => m.key !== "dashboard");
-    const puedeCrear = mods.filter((m) => can(idRole.value, m.key, "create")).length;
-    const puedeEditar = mods.filter((m) => can(idRole.value, m.key, "edit")).length;
-    const puedeEliminar = mods.filter((m) => can(idRole.value, m.key, "delete")).length;
-    return [
-        { ico: "📂", num: mods.length, lbl: "Paneles disponibles" },
-        { ico: "➕", num: puedeCrear, lbl: "Puedes crear" },
-        { ico: "✏️", num: puedeEditar, lbl: "Puedes editar" },
-        { ico: "🗑️", num: puedeEliminar, lbl: "Puedes eliminar" }
-    ];
 });
 </script>
 
 <template>
     <section>
         <div class="welcome">
-            <h2>Hola, {{ nombreUsuario }} 👋</h2>
+            <h2>Hola, {{ nombreEmpleado }} 👋</h2>
             <p>Bienvenido al Sistema de Control de Preenfrío · Frutas Chanitos</p>
         </div>
 
         <div class="rol-info">
             <strong>Rol: {{ roleLabel }}.</strong> {{ descripcionRol }}
-        </div>
-
-        <!-- KPIs de acceso -->
-        <div class="kpi-row">
-            <div v-for="(k, i) in kpis" :key="i" class="kpi">
-                <div class="kpi-ico">{{ k.ico }}</div>
-                <div>
-                    <div class="kpi-num">{{ k.num }}</div>
-                    <div class="kpi-lbl">{{ k.lbl }}</div>
-                </div>
-            </div>
         </div>
 
         <!-- Tarjetas de módulos agrupadas -->
@@ -89,12 +58,6 @@ const kpis = computed(() => {
                 >
                     <div class="card-ico">{{ mod.icon }}</div>
                     <div class="card-title">{{ mod.label }}</div>
-                    <div class="card-perms">
-                        <span v-if="mod.perms.view" class="perm-tag perm-ver">Ver</span>
-                        <span v-if="mod.perms.create" class="perm-tag perm-crear">Crear</span>
-                        <span v-if="mod.perms.edit" class="perm-tag perm-editar">Editar</span>
-                        <span v-if="mod.perms.delete" class="perm-tag perm-elim">Eliminar</span>
-                    </div>
                 </router-link>
             </div>
         </template>
