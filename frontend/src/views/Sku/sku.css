@@ -268,3 +268,32 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+.sku-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.sku-buscar {
+    flex: 1;
+    min-width: 220px;
+    max-width: 420px;
+    padding: 9px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: #fff;
+    box-sizing: border-box;
+}
+.sku-buscar:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(110, 139, 84, 0.15);
+}
+.sku-conteo {
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+    white-space: nowrap;
+}

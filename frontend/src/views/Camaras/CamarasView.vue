@@ -24,6 +24,7 @@ const tipoLabel = (t) => TIPOS[Number(t)] || "Otro";
 const camaras = ref([]);
 const cargando = ref(false);
 const errorMsg = ref("");
+const busqueda = ref("");
 
 // ---------- Modal ----------
 const modalAbierto = ref(false);
@@ -64,6 +65,19 @@ const cargarCamaras = async () => {
 };
 
 onMounted(cargarCamaras);
+
+// ---------- Filtro de búsqueda ----------
+const camarasFiltradas = computed(() => {
+    const q = busqueda.value.trim().toLowerCase();
+    if (!q) return camaras.value;
+    return camaras.value.filter((c) => {
+        return (
+            (c.nombre_camara || "").toLowerCase().includes(q) ||
+            (c.ubicacion || "").toLowerCase().includes(q) ||
+            tipoLabel(c.tipo_camara).toLowerCase().includes(q)
+        );
+    });
+});
 
 // ---------- Abrir modal para CREAR ----------
 const abrirCrear = () => {
@@ -183,17 +197,33 @@ const eliminar = async (camara) => {
             </button>
         </div>
 
+        <!-- Barra de herramientas: buscador + conteo -->
+        <div class="cam-toolbar">
+            <input
+                v-model="busqueda"
+                type="text"
+                class="cam-buscar"
+                placeholder="🔍 Buscar por nombre, ubicación, tipo…"
+            />
+            <span class="cam-conteo">
+                {{ camarasFiltradas.length }} de {{ camaras.length }} cámaras
+            </span>
+        </div>
+
         <!-- Estados -->
         <div v-if="cargando" class="cam-estado">Cargando cámaras…</div>
         <div v-else-if="errorMsg" class="cam-estado error">{{ errorMsg }}</div>
         <div v-else-if="camaras.length === 0" class="cam-estado">
             No hay cámaras registradas todavía.
         </div>
+        <div v-else-if="camarasFiltradas.length === 0" class="cam-estado">
+            No se encontraron cámaras para "{{ busqueda }}".
+        </div>
 
         <!-- Grid de tarjetas -->
         <div v-else class="cam-grid">
             <div
-                v-for="cam in camaras"
+                v-for="cam in camarasFiltradas"
                 :key="cam.id_camara"
                 class="flip-card"
             >

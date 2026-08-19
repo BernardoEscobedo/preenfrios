@@ -17,6 +17,7 @@ const canDelete = computed(() => puedeEliminar("productores"));
 const productores = ref([]);
 const cargando = ref(false);
 const errorMsg = ref("");
+const busqueda = ref("");
 
 // ---------- Modal ----------
 const modalAbierto = ref(false);
@@ -53,6 +54,20 @@ const cargarProductores = async () => {
 };
 
 onMounted(cargarProductores);
+
+// ---------- Filtro de búsqueda ----------
+const productoresFiltrados = computed(() => {
+    const q = busqueda.value.trim().toLowerCase();
+    if (!q) return productores.value;
+    return productores.value.filter((p) => {
+        const estadoTxt = Number(p.activo) === 1 ? "activo" : "inactivo";
+        return (
+            (p.codigo_productor || "").toLowerCase().includes(q) ||
+            (p.nombre || "").toLowerCase().includes(q) ||
+            estadoTxt.includes(q)
+        );
+    });
+});
 
 // ---------- Abrir modal para CREAR ----------
 const abrirCrear = () => {
@@ -154,17 +169,33 @@ const eliminar = async (productor) => {
             </button>
         </div>
 
+        <!-- Barra de herramientas: buscador + conteo -->
+        <div class="prod-toolbar">
+            <input
+                v-model="busqueda"
+                type="text"
+                class="prod-buscar"
+                placeholder="🔍 Buscar por código, nombre, estado…"
+            />
+            <span class="prod-conteo">
+                {{ productoresFiltrados.length }} de {{ productores.length }} productores
+            </span>
+        </div>
+
         <!-- Estados -->
         <div v-if="cargando" class="prod-estado">Cargando productores…</div>
         <div v-else-if="errorMsg" class="prod-estado error">{{ errorMsg }}</div>
         <div v-else-if="productores.length === 0" class="prod-estado">
             No hay productores registrados todavía.
         </div>
+        <div v-else-if="productoresFiltrados.length === 0" class="prod-estado">
+            No se encontraron productores para "{{ busqueda }}".
+        </div>
 
         <!-- Grid de tarjetas -->
         <div v-else class="prod-grid">
             <div
-                v-for="prod in productores"
+                v-for="prod in productoresFiltrados"
                 :key="prod.id_productor"
                 class="flip-card"
             >

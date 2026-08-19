@@ -17,6 +17,7 @@ const canDelete = computed(() => puedeEliminar("sku"));
 const skus = ref([]);
 const cargando = ref(false);
 const errorMsg = ref("");
+const busqueda = ref("");
 
 // ---------- Modal ----------
 const modalAbierto = ref(false);
@@ -48,6 +49,18 @@ const cargarSkus = async () => {
 };
 
 onMounted(cargarSkus);
+
+// ---------- Filtro de búsqueda ----------
+const skusFiltrados = computed(() => {
+    const q = busqueda.value.trim().toLowerCase();
+    if (!q) return skus.value;
+    return skus.value.filter((s) => {
+        return (
+            (s.codigo_sku || "").toLowerCase().includes(q) ||
+            (s.calidad || "").toLowerCase().includes(q)
+        );
+    });
+});
 
 // ---------- Abrir modal para CREAR ----------
 const abrirCrear = () => {
@@ -143,17 +156,33 @@ const eliminar = async (sku) => {
             </button>
         </div>
 
+        <!-- Barra de herramientas: buscador + conteo -->
+        <div class="sku-toolbar">
+            <input
+                v-model="busqueda"
+                type="text"
+                class="sku-buscar"
+                placeholder="🔍 Buscar por código o calidad…"
+            />
+            <span class="sku-conteo">
+                {{ skusFiltrados.length }} de {{ skus.length }} SKU
+            </span>
+        </div>
+
         <!-- Estados -->
         <div v-if="cargando" class="sku-estado">Cargando SKU…</div>
         <div v-else-if="errorMsg" class="sku-estado error">{{ errorMsg }}</div>
         <div v-else-if="skus.length === 0" class="sku-estado">
             No hay SKU registrados todavía.
         </div>
+        <div v-else-if="skusFiltrados.length === 0" class="sku-estado">
+            No se encontraron SKU para "{{ busqueda }}".
+        </div>
 
         <!-- Grid de tarjetas -->
         <div v-else class="sku-grid">
             <div
-                v-for="sku in skus"
+                v-for="sku in skusFiltrados"
                 :key="sku.id_sku"
                 class="flip-card"
             >
