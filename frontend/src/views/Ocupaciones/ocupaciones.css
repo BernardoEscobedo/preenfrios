@@ -1,0 +1,465 @@
+/* =========================================================
+   ESTILOS DE OCUPACIONES — separados del componente .vue
+   Usa las variables de theme.css (paleta banano suave).
+   Clases con prefijo ocup- para no chocar con estilos globales.
+   Reutiliza clases globales del modal ya definidas en camaras.css.
+   ========================================================= */
+
+.ocup-view {
+    padding: 4px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Encabezado ---------- */
+.ocup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.ocup-header h2 {
+    margin: 0;
+    color: var(--verde-oscuro);
+}
+.ocup-subtitle {
+    margin: 4px 0 0;
+    color: var(--texto-suave);
+    font-size: 0.9rem;
+}
+.ocup-btn-nueva {
+    background: var(--amarillo);
+    color: var(--verde-oscuro);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.ocup-btn-nueva:hover {
+    background: var(--amarillo-fuerte);
+    transform: translateY(-1px);
+}
+
+/* ---------- Títulos de sección ---------- */
+.ocup-seccion {
+    color: var(--verde-oscuro);
+    font-size: 1rem;
+    margin: 22px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--borde);
+}
+/* Cabecera de sección con filtros a la derecha */
+.ocup-seccion-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 22px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--borde);
+}
+.ocup-seccion-head .ocup-seccion {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.ocup-filtros {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.filtro-btn {
+    background: var(--crema);
+    color: var(--texto-suave);
+    border: 1px solid var(--borde);
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.filtro-btn:hover {
+    background: var(--amarillo-claro);
+}
+.filtro-btn.activo {
+    background: var(--verde-oscuro);
+    color: #fff;
+    border-color: var(--verde-oscuro);
+}
+
+/* ---------- Estados ---------- */
+.ocup-estado {
+    padding: 20px;
+    text-align: center;
+    color: var(--texto-suave);
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+}
+.ocup-estado.error {
+    color: var(--error);
+    background: #fdeceb;
+}
+
+/* ===================================================
+   DISPONIBILIDAD — tarjetas por cámara
+   =================================================== */
+.disp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+.disp-card {
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-top: 4px solid var(--verde);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--sombra);
+}
+.disp-card.en-mantenimiento {
+    border-top-color: var(--error);
+    background: #fbf3f1;
+}
+.disp-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.disp-nombre {
+    font-weight: 700;
+    color: var(--verde-oscuro);
+    font-size: 1rem;
+}
+.badge-mant {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #f7ded9;
+    color: #a2432f;
+    white-space: nowrap;
+}
+.badge-operativa {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #e2f0d6;
+    color: #3d6b1f;
+    white-space: nowrap;
+}
+
+/* Meta de la tarjeta: tipo de cámara + ubicación */
+.disp-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.badge-tipocam {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 999px;
+}
+.badge-tipocam.tc-pre {
+    background: #d6ecff;
+    color: #0b5cad;
+}
+.badge-tipocam.tc-con {
+    background: #ffe6cc;
+    color: #b5651d;
+}
+.disp-ubi {
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+}
+
+/* Barras de capacidad */
+.cap-row {
+    margin-bottom: 10px;
+}
+.cap-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.8rem;
+    color: var(--texto);
+    margin-bottom: 4px;
+}
+.cap-cifra {
+    font-weight: 700;
+    color: var(--verde-oscuro);
+    font-size: 0.78rem;
+}
+.cap-bar {
+    width: 100%;
+    height: 10px;
+    background: #e8e6d8;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.cap-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+/* Colores según nivel de ocupación */
+.nivel-bajo {
+    background: #7bb662; /* verde: mucho disponible */
+}
+.nivel-medio {
+    background: #e6b800; /* amarillo: medio */
+}
+.nivel-alto {
+    background: #d9534f; /* rojo: casi lleno */
+}
+
+/* ===================================================
+   TABLA DE OCUPACIONES ACTIVAS
+   =================================================== */
+.ocup-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.ocup-buscar {
+    flex: 1;
+    min-width: 220px;
+    max-width: 420px;
+    padding: 9px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: #fff;
+    box-sizing: border-box;
+}
+.ocup-buscar:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(110, 139, 84, 0.15);
+}
+.ocup-conteo {
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+    white-space: nowrap;
+}
+
+.ocup-tabla-wrap {
+    overflow-x: auto;
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+}
+.ocup-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    min-width: 820px;
+}
+.ocup-tabla thead th {
+    background: var(--verde-oscuro);
+    color: #fff;
+    text-align: left;
+    padding: 11px 12px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+.ocup-tabla tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+    color: var(--texto);
+    vertical-align: middle;
+}
+.ocup-tabla tbody td small {
+    display: block;
+    color: var(--texto-suave);
+    font-size: 0.72rem;
+}
+.ocup-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+.ocup-tabla tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.45);
+}
+.ocup-tabla tbody tr:hover {
+    background: var(--amarillo-claro);
+}
+.col-centro {
+    text-align: center;
+}
+
+.badge-tipo-ocup {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+.badge-tipo-ocup.prod {
+    background: #d6ecff;
+    color: #0b5cad;
+}
+.badge-tipo-ocup.mant {
+    background: #f7ded9;
+    color: #a2432f;
+}
+
+/* Acciones por fila */
+.acciones {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+.btn-icono {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px 6px;
+    border-radius: 7px;
+    transition: background 0.15s;
+    line-height: 1;
+}
+.btn-icono.cerrar:hover {
+    background: #e2f0d6;
+}
+.btn-icono.editar:hover {
+    background: var(--amarillo-claro);
+}
+.btn-icono.eliminar:hover {
+    background: #f7ded9;
+}
+
+/* ---------- Modal ----------
+   (Reutiliza estilos globales; se incluyen aquí para independencia.) */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+.modal {
+    background: #fff;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+.modal.modal-sm {
+    max-width: 400px;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--verde-oscuro);
+    color: #fff;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+.modal-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.modal-body label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--verde-oscuro);
+    gap: 6px;
+}
+.modal-body input,
+.modal-body select {
+    padding: 9px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.cierre-info {
+    font-size: 0.86rem;
+    color: var(--texto);
+    margin: 0 0 4px;
+    font-weight: 400;
+}
+.form-error {
+    color: var(--error);
+    font-size: 0.85rem;
+    margin: 0;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--crema-fondo);
+}
+.btn-cancelar {
+    background: #e6e6da;
+    color: var(--texto);
+    border: none;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-guardar {
+    background: var(--amarillo);
+    color: var(--verde-oscuro);
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.btn-guardar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
