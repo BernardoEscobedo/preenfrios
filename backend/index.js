@@ -18,6 +18,7 @@ import despachosRouter from "./routes/despachos.route.js";
 import movimientosInventarioRouter from "./routes/movimientosInventario.route.js";
 import pulpeosRouter from "./routes/pulpeos.route.js";
 import produccionRouter from "./routes/produccion.route.js";
+import recepcionesRouter from "./routes/recepciones.route.js";
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/preenfrio/despachos", despachosRouter);
 app.use("/api/preenfrio/movimientos", movimientosInventarioRouter);
 app.use("/api/preenfrio/pulpeos", pulpeosRouter);
 app.use("/api/preenfrio/produccion", produccionRouter);
+app.use("/api/preenfrio/recepciones", recepcionesRouter);
 
 // CONFIGURACIÓN
 const PORT = process.env.PORT || 3000;
