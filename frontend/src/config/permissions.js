@@ -38,7 +38,7 @@ export const MODULES = [
     { key: "mantenimientos", label: "Mantenimientos",   path: "/mantenimientos",  icon: "🛠️", group: "Operación",      tipo: "operativo" },
     { key: "transportes",    label: "Transportes",      path: "/transportes",     icon: "🚚", group: "Operación",      tipo: "operativo" },
     { key: "despachos",      label: "Despachos",        path: "/despachos",       icon: "📤", group: "Operación",      tipo: "operativo" },
-
+    
     // CATÁLOGOS
     { key: "camaras",        label: "Cámaras",          path: "/camaras",         icon: "🧊", group: "Catálogos",      tipo: "catalogo" },
     { key: "ocupaciones",    label: "Ocupaciones",      path: "/ocupaciones",     icon: "📦", group: "Catálogos",      tipo: "catalogo" },
@@ -46,6 +46,7 @@ export const MODULES = [
     { key: "productores",    label: "Productores",      path: "/productores",     icon: "👨‍🌾", group: "Catálogos",    tipo: "catalogo" },
     { key: "fincas",         label: "Fincas",           path: "/fincas",          icon: "🌱", group: "Catálogos",      tipo: "catalogo" },
     { key: "cedis",          label: "Cedis / Clientes", path: "/cedis",           icon: "🏬", group: "Catálogos",      tipo: "catalogo" },
+    { key: "produccion",     label: "Producción",       path: "/produccion",      icon: "🏭", group: "Operación",      tipo: "catalogo" },
 
     // ADMINISTRACIÓN
     { key: "empleados",      label: "Empleados",        path: "/empleados",       icon: "🧑‍💼", group: "Administración", tipo: "admin" },

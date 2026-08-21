@@ -18,9 +18,10 @@ const ProductoresView = () => import("../views/Productores/ProductoresView.vue")
 const FincasView = () => import("../views/Fincas/FincasView.vue");
 const CedisClienteView = () => import("../views/CedisCliente/CedisClienteView.vue");
 const OcupacionesView = () => import("../views/Ocupaciones/OcupacionesView.vue");
+const ProduccionView = () => import("../views/Produccion/ProduccionView.vue");
 
 // Módulos que YA tienen su vista real (no usan ModulePlaceholder).
-const MODULOS_CON_VISTA = ["camaras", "sku", "productores", "fincas", "cedis", "ocupaciones"];
+const MODULOS_CON_VISTA = ["camaras", "sku", "productores", "fincas", "cedis", "ocupaciones", "produccion"];
 
 function getIdRole() {
     try {
@@ -95,6 +96,12 @@ const routes = [
                 name: "ocupaciones",
                 component: OcupacionesView,
                 meta: { requiresAuth: true, moduleKey: "ocupaciones" }
+            },
+            {
+                path: "produccion",
+                name: "produccion",
+                component: ProduccionView,
+                meta: { requiresAuth: true, moduleKey: "produccion" }
             },
             ...moduleRoutes,
             {

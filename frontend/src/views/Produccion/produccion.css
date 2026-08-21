@@ -1,0 +1,505 @@
+/* =========================================================
+   ESTILOS DE PRODUCCIÓN — vista en TABLA con filtros y carga Excel
+   Usa las variables de theme.css (paleta banano suave).
+   Clases con prefijo prod- para no chocar con estilos globales.
+   Reutiliza clases globales del modal ya definidas en camaras.css.
+   ========================================================= */
+
+.prod-view {
+    padding: 4px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Encabezado ---------- */
+.prod-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.prod-header h2 {
+    margin: 0;
+    color: var(--verde-oscuro);
+}
+.prod-subtitle {
+    margin: 4px 0 0;
+    color: var(--texto-suave);
+    font-size: 0.9rem;
+}
+.prod-header-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.prod-btn-nueva {
+    background: var(--amarillo);
+    color: var(--verde-oscuro);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.prod-btn-nueva:hover {
+    background: var(--amarillo-fuerte);
+    transform: translateY(-1px);
+}
+.prod-btn-excel {
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.prod-btn-excel:hover {
+    background: var(--verde-oscuro);
+    transform: translateY(-1px);
+}
+
+/* ---------- Filtros ---------- */
+.prod-filtros {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.prod-buscar {
+    flex: 1;
+    min-width: 240px;
+    padding: 9px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: #fff;
+    box-sizing: border-box;
+}
+.prod-buscar:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(110, 139, 84, 0.15);
+}
+.prod-select {
+    padding: 9px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    background: #fff;
+    box-sizing: border-box;
+}
+.prod-btn-limpiar {
+    background: #e6e6da;
+    color: var(--texto);
+    border: none;
+    padding: 9px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.prod-btn-limpiar:hover {
+    background: #dcdcce;
+}
+
+/* Conteo + totales */
+.prod-conteo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.prod-conteo {
+    font-size: 0.82rem;
+    color: var(--texto-suave);
+}
+.prod-totales {
+    font-size: 0.82rem;
+    color: var(--verde-oscuro);
+    background: var(--amarillo-claro);
+    border: 1px solid var(--amarillo-fuerte);
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* ---------- Estados ---------- */
+.prod-estado {
+    padding: 24px;
+    text-align: center;
+    color: var(--texto-suave);
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+}
+.prod-estado.error {
+    color: var(--error);
+    background: #fdeceb;
+}
+
+/* ---------- Tabla ---------- */
+.prod-tabla-wrap {
+    overflow-x: auto;
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+}
+.prod-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 1000px;
+}
+.prod-tabla thead th {
+    background: var(--verde-oscuro);
+    color: #fff;
+    text-align: left;
+    padding: 11px 12px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+}
+.prod-tabla tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+    color: var(--texto);
+    vertical-align: middle;
+}
+.prod-tabla tbody td small {
+    display: block;
+    color: var(--texto-suave);
+    font-size: 0.72rem;
+}
+.prod-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+.prod-tabla tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.45);
+}
+.prod-tabla tbody tr:hover {
+    background: var(--amarillo-claro);
+}
+.col-centro {
+    text-align: center;
+}
+
+/* Píldoras */
+.cod-pill {
+    display: inline-block;
+    background: #efece0;
+    color: var(--verde-oscuro);
+    font-weight: 700;
+    font-size: 0.74rem;
+    padding: 1px 8px;
+    border-radius: 999px;
+    margin-right: 4px;
+}
+.pill-pre {
+    display: inline-block;
+    background: #d6ecff;
+    color: #0b5cad;
+    font-weight: 700;
+    font-size: 0.74rem;
+    padding: 2px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.pill-directo {
+    display: inline-block;
+    background: #efece0;
+    color: var(--texto-suave);
+    font-weight: 600;
+    font-size: 0.74rem;
+    padding: 2px 9px;
+    border-radius: 999px;
+}
+
+/* Badge de estado */
+.badge-estado {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.badge-estado.est-1 {
+    background: #e7eff0;
+    color: #37637a;
+}
+.badge-estado.est-2 {
+    background: #f4eab6;
+    color: #7a671f;
+}
+.badge-estado.est-3 {
+    background: #e2f0d6;
+    color: #3d6b1f;
+}
+.badge-estado.est-0 {
+    background: #f0e0dd;
+    color: #a2432f;
+}
+
+/* Acciones por fila */
+.acciones {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+.btn-icono {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px 6px;
+    border-radius: 7px;
+    transition: background 0.15s;
+    line-height: 1;
+}
+.btn-icono.editar:hover {
+    background: var(--amarillo-claro);
+}
+.btn-icono.eliminar:hover {
+    background: #f7ded9;
+}
+
+/* =========================================================
+   MODAL (reutiliza estilos globales; se incluye por independencia)
+   ========================================================= */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+.modal {
+    background: #fff;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+.modal.modal-lg {
+    max-width: 640px;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--verde-oscuro);
+    color: #fff;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+.modal-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 72vh;
+    overflow-y: auto;
+}
+.modal-body label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--verde-oscuro);
+    gap: 6px;
+}
+.modal-body input,
+.modal-body select {
+    padding: 9px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.form-error {
+    color: var(--error);
+    font-size: 0.85rem;
+    margin: 0;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--crema-fondo);
+}
+.btn-cancelar {
+    background: #e6e6da;
+    color: var(--texto);
+    border: none;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-guardar {
+    background: var(--amarillo);
+    color: var(--verde-oscuro);
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.btn-guardar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   CARGA EXCEL
+   ========================================================= */
+.excel-pasos {
+    background: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.excel-pasos p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--texto);
+    font-weight: 400;
+}
+.btn-plantilla {
+    align-self: flex-start;
+    background: var(--amarillo);
+    color: var(--verde-oscuro);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.82rem;
+}
+.btn-plantilla:hover {
+    background: var(--amarillo-fuerte);
+}
+.excel-file {
+    font-size: 0.85rem !important;
+    color: var(--texto) !important;
+    font-weight: 400 !important;
+    gap: 8px;
+}
+.excel-file input {
+    border: 1px dashed var(--borde);
+    padding: 12px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.excel-errores {
+    background: #fdeceb;
+    border: 1px solid #e3b7ac;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--error);
+}
+.excel-errores ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+.excel-errores li {
+    margin: 2px 0;
+}
+
+.excel-preview {
+    background: #f2f7ec;
+    border: 1px solid #cde3b6;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--verde-oscuro);
+}
+.excel-preview-list {
+    margin-top: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.excel-preview-item {
+    padding: 3px 0;
+    border-bottom: 1px dashed #cde3b6;
+    color: var(--texto);
+}
+.excel-mas {
+    padding-top: 6px;
+    font-style: italic;
+    color: var(--texto-suave);
+}
+
+.excel-progreso {
+    font-size: 0.85rem;
+    color: var(--verde-oscuro);
+}
+.excel-bar {
+    margin-top: 6px;
+    width: 100%;
+    height: 10px;
+    background: #e8e6d8;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.excel-bar-fill {
+    height: 100%;
+    background: var(--verde);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.excel-resultado {
+    background: #f2f7ec;
+    border: 1px solid #cde3b6;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: var(--verde-oscuro);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
