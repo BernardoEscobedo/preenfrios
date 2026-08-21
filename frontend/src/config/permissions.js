@@ -43,10 +43,11 @@ export const MODULES = [
     { key: "camaras",        label: "Cámaras",          path: "/camaras",         icon: "🧊", group: "Catálogos",      tipo: "catalogo" },
     { key: "ocupaciones",    label: "Ocupaciones",      path: "/ocupaciones",     icon: "📦", group: "Catálogos",      tipo: "catalogo" },
     { key: "sku",            label: "SKU",              path: "/sku",             icon: "🔖", group: "Catálogos",      tipo: "catalogo" },
-    { key: "productores",    label: "Productores",      path: "/productores",     icon: "👨‍🌾", group: "Catálogos",    tipo: "catalogo" },
+    { key: "productores",    label: "Productores",      path: "/productores",     icon: "👨‍🌾", group: "Catálogos",      tipo: "catalogo" },
     { key: "fincas",         label: "Fincas",           path: "/fincas",          icon: "🌱", group: "Catálogos",      tipo: "catalogo" },
     { key: "cedis",          label: "Cedis / Clientes", path: "/cedis",           icon: "🏬", group: "Catálogos",      tipo: "catalogo" },
     { key: "produccion",     label: "Producción",       path: "/produccion",      icon: "🏭", group: "Operación",      tipo: "catalogo" },
+    { key: "recepciones",    label: "Recepciones",      path: "/recepciones",     icon: "📥", group: "Operación",      tipo: "catalogo" },
 
     // ADMINISTRACIÓN
     { key: "empleados",      label: "Empleados",        path: "/empleados",       icon: "🧑‍💼", group: "Administración", tipo: "admin" },
