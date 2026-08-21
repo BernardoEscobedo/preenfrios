@@ -1,5 +1,8 @@
 import { db } from "../database/connection.database.js";
 
+// La calidad ahora se toma de sku_pt (s.calidad AS calidad_sku), ya NO
+// existe la columna produccion.calidad.
+
 // Obtener todas las producciones (con nombres legibles de catálogos)
 const getProducciones = async () => {
     const result = await db.query(
@@ -11,6 +14,7 @@ const getProducciones = async () => {
             pr.codigo_productor,
             pr.nombre           AS nombre_productor,
             s.codigo_sku,
+            s.calidad           AS calidad_sku,
             cc.cliente,
             cc.cedis,
             cc.acronimo         AS acronimo_cc,
@@ -39,6 +43,7 @@ const getProduccionById = async (id_produccion) => {
             pr.codigo_productor,
             pr.nombre           AS nombre_productor,
             s.codigo_sku,
+            s.calidad           AS calidad_sku,
             cc.cliente,
             cc.cedis,
             cc.acronimo         AS acronimo_cc,
@@ -68,6 +73,7 @@ const getProduccionesBySemana = async (semana) => {
             pr.codigo_productor,
             pr.nombre           AS nombre_productor,
             s.codigo_sku,
+            s.calidad           AS calidad_sku,
             cc.cliente,
             cc.cedis,
             cc.acronimo         AS acronimo_cc,
@@ -87,7 +93,7 @@ const getProduccionesBySemana = async (semana) => {
     return result.rows;
 };
 
-// Crear producción
+// Crear producción (sin calidad)
 const createProduccion = async ({
     semana,
     region,
@@ -98,7 +104,6 @@ const createProduccion = async ({
     fecha_entrega,
     id_cc,
     id_sku,
-    calidad,
     cajas_procesadas,
     estiba_pallets,
     comentarios,
@@ -117,14 +122,13 @@ const createProduccion = async ({
             fecha_entrega,
             id_cc,
             id_sku,
-            calidad,
             cajas_procesadas,
             estiba_pallets,
             comentarios,
             id_camara,
             estado
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
         `,
         [
@@ -137,7 +141,6 @@ const createProduccion = async ({
             fecha_entrega,
             id_cc,
             id_sku,
-            calidad,
             cajas_procesadas ?? 0,
             estiba_pallets ?? 0,
             comentarios,
@@ -149,7 +152,7 @@ const createProduccion = async ({
     return result.rows[0];
 };
 
-// Actualizar producción
+// Actualizar producción (sin calidad)
 const updateProduccion = async (
     id_produccion,
     {
@@ -162,7 +165,6 @@ const updateProduccion = async (
         fecha_entrega,
         id_cc,
         id_sku,
-        calidad,
         cajas_procesadas,
         estiba_pallets,
         comentarios,
@@ -183,13 +185,12 @@ const updateProduccion = async (
             fecha_entrega = $7,
             id_cc = $8,
             id_sku = $9,
-            calidad = $10,
-            cajas_procesadas = $11,
-            estiba_pallets = $12,
-            comentarios = $13,
-            id_camara = $14,
-            estado = $15
-        WHERE id_produccion = $16
+            cajas_procesadas = $10,
+            estiba_pallets = $11,
+            comentarios = $12,
+            id_camara = $13,
+            estado = $14
+        WHERE id_produccion = $15
         RETURNING *
         `,
         [
@@ -202,7 +203,6 @@ const updateProduccion = async (
             fecha_entrega,
             id_cc,
             id_sku,
-            calidad,
             cajas_procesadas ?? 0,
             estiba_pallets ?? 0,
             comentarios,

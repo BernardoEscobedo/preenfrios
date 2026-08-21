@@ -7,7 +7,10 @@
 //  - Alta uno por uno (modal con dropdowns de catálogos).
 //  - Carga masiva por Excel (usa SheetJS/xlsx; mapea códigos -> IDs).
 //
-// Requiere instalar SheetJS en el frontend:  npm install xlsx
+// NOTA: 'calidad' ya no es columna de produccion; se toma del SKU
+// (calidad_sku) solo para mostrar en la tabla.
+//
+// Requiere instalar SheetJS en el frontend:  npm install xlsx --legacy-peer-deps
 import { ref, reactive, computed, onMounted } from "vue";
 import * as XLSX from "xlsx";
 import { useAuth } from "../../composables/useAuth.js";
@@ -72,7 +75,6 @@ const form = reactive({
     fecha_entrega: "",
     id_cc: "",
     id_sku: "",
-    calidad: "",
     cajas_procesadas: 0,
     estiba_pallets: 0,
     comentarios: "",
@@ -141,14 +143,12 @@ onMounted(async () => {
 const produccionesFiltradas = computed(() => {
     let lista = producciones.value;
 
-    // Filtro por estado
     if (filtroEstado.value !== "todos") {
         lista = lista.filter(
             (p) => Number(p.estado) === Number(filtroEstado.value)
         );
     }
 
-    // Filtro por fecha (usamos fecha_empaque)
     if (filtroModo.value === "dia" && filtroDia.value) {
         lista = lista.filter(
             (p) => (p.fecha_empaque || "").substring(0, 10) === filtroDia.value
@@ -163,7 +163,6 @@ const produccionesFiltradas = computed(() => {
         );
     }
 
-    // Filtro de texto libre
     const q = busqueda.value.trim().toLowerCase();
     if (q) {
         lista = lista.filter((p) => {
@@ -183,7 +182,6 @@ const produccionesFiltradas = computed(() => {
     return lista;
 });
 
-// Totales del pie de tabla
 const totalCajas = computed(() =>
     produccionesFiltradas.value.reduce(
         (s, p) => s + (Number(p.cajas_procesadas) || 0),
@@ -221,7 +219,6 @@ const abrirCrear = () => {
         fecha_entrega: "",
         id_cc: "",
         id_sku: "",
-        calidad: "",
         cajas_procesadas: 0,
         estiba_pallets: 0,
         comentarios: "",
@@ -245,7 +242,6 @@ const abrirEditar = (p) => {
         fecha_entrega: (p.fecha_entrega || "").substring(0, 10),
         id_cc: p.id_cc ?? "",
         id_sku: p.id_sku ?? "",
-        calidad: p.calidad ?? "",
         cajas_procesadas: p.cajas_procesadas ?? 0,
         estiba_pallets: p.estiba_pallets ?? 0,
         comentarios: p.comentarios ?? "",
@@ -272,11 +268,9 @@ const construirPayload = () => ({
     fecha_entrega: form.fecha_entrega || null,
     id_cc: Number(form.id_cc),
     id_sku: Number(form.id_sku),
-    calidad: form.calidad?.trim() || null,
     cajas_procesadas: Number(form.cajas_procesadas) || 0,
     estiba_pallets: Number(form.estiba_pallets) || 0,
     comentarios: form.comentarios?.trim() || null,
-    // id_camara vacío => null (no se preenfría)
     id_camara: form.id_camara === "" ? null : Number(form.id_camara),
     estado: Number(form.estado)
 });
@@ -341,7 +335,7 @@ const cerrarExcel = () => {
     modalExcel.value = false;
 };
 
-// Descarga la plantilla generándola en el momento con SheetJS
+// Descarga la plantilla generándola en el momento con SheetJS (sin calidad)
 const descargarPlantilla = () => {
     const encabezados = [
         "semana",
@@ -353,7 +347,6 @@ const descargarPlantilla = () => {
         "fecha_entrega",
         "acronimo_cc",
         "codigo_sku",
-        "calidad",
         "cajas_procesadas",
         "estiba_pallets",
         "comentarios",
@@ -361,8 +354,7 @@ const descargarPlantilla = () => {
     ];
     const ejemplo = [
         34, "Chiapas", "001", "A01", "2026-08-20", 4, "2026-08-24",
-        "WMT-CEDA", "CPR01102", "Chanitos Premium Tarima Chep", 1152, 24,
-        "24 convencional", "Camara 1"
+        "WMT-CEDA", "CPR01102", 1152, 24, "24 convencional", "Camara 1"
     ];
     const ws = XLSX.utils.aoa_to_sheet([encabezados, ejemplo]);
     const wb = XLSX.utils.book_new();
@@ -402,7 +394,6 @@ const buscarCamara = (nombre) =>
             String(nombre).trim().toLowerCase()
     );
 
-// Convierte una fecha de Excel (número serial o texto) a AAAA-MM-DD
 const normalizarFecha = (valor) => {
     if (!valor && valor !== 0) return null;
     if (typeof valor === "number") {
@@ -415,7 +406,6 @@ const normalizarFecha = (valor) => {
     return String(valor).substring(0, 10);
 };
 
-// Lee el archivo, valida y arma el preview
 const onArchivo = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -433,7 +423,7 @@ const onArchivo = async (event) => {
         const errores = [];
 
         filas.forEach((row, idx) => {
-            const numFila = idx + 2; // fila 1 = encabezados
+            const numFila = idx + 2;
             const finca = buscarFinca(row.codigo_finca);
             const productor = buscarProductor(row.codigo_productor);
             const sku = buscarSku(row.codigo_sku);
@@ -449,8 +439,7 @@ const onArchivo = async (event) => {
             if (!productor)
                 problemas.push(`productor '${row.codigo_productor}' no existe`);
             if (!sku) problemas.push(`SKU '${row.codigo_sku}' no existe`);
-            if (!cc)
-                problemas.push(`cliente '${row.acronimo_cc}' no existe`);
+            if (!cc) problemas.push(`cliente '${row.acronimo_cc}' no existe`);
             if (!row.fecha_empaque) problemas.push("falta fecha_empaque");
             if (row.nombre_camara && !camara)
                 problemas.push(`cámara '${row.nombre_camara}' no existe`);
@@ -477,7 +466,6 @@ const onArchivo = async (event) => {
                     : null,
                 id_cc: cc.id_cc,
                 id_sku: sku.id_sku,
-                calidad: String(row.calidad || "").trim() || null,
                 cajas_procesadas: Number(row.cajas_procesadas) || 0,
                 estiba_pallets: Number(row.estiba_pallets) || 0,
                 comentarios: String(row.comentarios || "").trim() || null,
@@ -493,18 +481,15 @@ const onArchivo = async (event) => {
             { fila: "-", mensaje: "No se pudo leer el archivo Excel." }
         ];
     } finally {
-        // Permite volver a subir el mismo archivo
         event.target.value = "";
     }
 };
 
-// Inserta las filas válidas en la BD
 const confirmarImport = async () => {
     if (filasPreview.value.length === 0) return;
     importando.value = true;
     progresoActual.value = 0;
     progresoTotal.value = filasPreview.value.length;
-    // Quitamos los campos auxiliares (_fila, _resumen) antes de enviar
     const payload = filasPreview.value.map(({ _fila, _resumen, ...rest }) => rest);
     try {
         const res = await produccionService.crearMasivo(
@@ -662,7 +647,10 @@ const confirmarImport = async () => {
                             <b>{{ p.cliente }}</b>
                             <small>{{ p.cedis }}</small>
                         </td>
-                        <td>{{ p.codigo_sku }}</td>
+                        <td>
+                            {{ p.codigo_sku }}
+                            <small>{{ p.calidad_sku }}</small>
+                        </td>
                         <td class="col-centro">{{ p.cajas_procesadas }}</td>
                         <td class="col-centro">{{ p.estiba_pallets }}</td>
                         <td>
@@ -791,11 +779,6 @@ const confirmarImport = async () => {
                         </select>
                     </label>
 
-                    <label>
-                        Calidad (texto)
-                        <input v-model="form.calidad" type="text" maxlength="150" />
-                    </label>
-
                     <div class="grid-3">
                         <label>
                             Tránsito (días)
@@ -880,7 +863,6 @@ const confirmarImport = async () => {
                         <input type="file" accept=".xlsx,.xls" @change="onArchivo" />
                     </label>
 
-                    <!-- Errores de validación -->
                     <div v-if="erroresPreview.length" class="excel-errores">
                         <b>⚠️ {{ erroresPreview.length }} fila(s) con problemas (no se importarán):</b>
                         <ul>
@@ -890,7 +872,6 @@ const confirmarImport = async () => {
                         </ul>
                     </div>
 
-                    <!-- Preview de filas válidas -->
                     <div v-if="filasPreview.length" class="excel-preview">
                         <b>✅ {{ filasPreview.length }} fila(s) listas para importar:</b>
                         <div class="excel-preview-list">
@@ -908,7 +889,6 @@ const confirmarImport = async () => {
                         </div>
                     </div>
 
-                    <!-- Barra de progreso -->
                     <div v-if="importando" class="excel-progreso">
                         Importando {{ progresoActual }} / {{ progresoTotal }}…
                         <div class="excel-bar">
@@ -919,7 +899,6 @@ const confirmarImport = async () => {
                         </div>
                     </div>
 
-                    <!-- Resultado -->
                     <div v-if="resultadoImport" class="excel-resultado">
                         <b>✅ {{ resultadoImport.ok }} producciones importadas.</b>
                         <div v-if="resultadoImport.errores.length" class="excel-errores">
