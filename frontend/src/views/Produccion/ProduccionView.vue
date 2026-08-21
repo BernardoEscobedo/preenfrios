@@ -5,13 +5,15 @@
 // Vista de PRODUCCIÓN (plan logístico) en formato TABLA con:
 //  - Filtros: texto libre, por día, por semana, por mes, por estado.
 //  - Alta uno por uno (modal con dropdowns de catálogos).
-//  - Carga masiva por Excel (usa SheetJS/xlsx; mapea códigos -> IDs).
+//  - Carga masiva por Excel POR IDs.
+//  - AUTOCÁLCULO DE ESTIBA (tarimas) según cajas y SKU:
+//      · 48 cajas = 1 tarima (general)
+//      · 42 cajas = 1 tarima para SKUs CPL08133, CPL08134, CPL08141
+//    (La ocupación de cámara NO se calcula aquí; se detona al recepcionar.)
 //
-// NOTA: 'calidad' ya no es columna de produccion; se toma del SKU
-// (calidad_sku) solo para mostrar en la tabla.
-//
-// Requiere instalar SheetJS en el frontend:  npm install xlsx --legacy-peer-deps
-import { ref, reactive, computed, onMounted } from "vue";
+// NOTA: 'calidad' ya no es columna de produccion; se toma del SKU.
+// Requiere:  npm install xlsx --legacy-peer-deps
+import { ref, reactive, computed, watch, onMounted } from "vue";
 import * as XLSX from "xlsx";
 import { useAuth } from "../../composables/useAuth.js";
 import { produccionService } from "../../services/produccion.service.js";
@@ -29,6 +31,19 @@ const canEdit = computed(() => puedeEditar("produccion"));
 const canDelete = computed(() => puedeEliminar("produccion"));
 const hayAcciones = computed(() => canEdit.value || canDelete.value);
 
+// ---------- Regla de estiba (cajas -> tarimas) ----------
+const SKUS_FACTOR_42 = ["CPL08133", "CPL08134", "CPL08141"];
+const factorCajasPorTarima = (codigo_sku) =>
+    SKUS_FACTOR_42.includes(String(codigo_sku || "").trim().toUpperCase())
+        ? 42
+        : 48;
+// Calcula tarimas (estiba) a partir de cajas y código de SKU
+const calcularEstiba = (cajas, codigo_sku) => {
+    const c = Number(cajas) || 0;
+    if (c <= 0) return 0;
+    return Math.ceil(c / factorCajasPorTarima(codigo_sku));
+};
+
 // Estados de producción
 const ESTADOS = {
     0: "Cancelada",
@@ -43,7 +58,6 @@ const producciones = ref([]);
 const cargando = ref(false);
 const errorMsg = ref("");
 
-// Catálogos para dropdowns y para mapear el Excel
 const fincas = ref([]);
 const productores = ref([]);
 const skus = ref([]);
@@ -52,10 +66,10 @@ const camaras = ref([]);
 
 // ---------- Filtros ----------
 const busqueda = ref("");
-const filtroModo = ref("todos"); // todos | dia | semana | mes
+const filtroModo = ref("todos");
 const filtroDia = ref("");
 const filtroSemana = ref("");
-const filtroMes = ref(""); // formato AAAA-MM
+const filtroMes = ref("");
 const filtroEstado = ref("todos");
 
 // ---------- Modal alta/edición ----------
@@ -64,6 +78,8 @@ const modoEdicion = ref(false);
 const guardando = ref(false);
 const errorForm = ref("");
 const idEditando = ref(null);
+// Cuando el usuario edita la estiba a mano, dejamos de autocalcular
+const estibaManual = ref(false);
 
 const form = reactive({
     semana: "",
@@ -90,6 +106,32 @@ const formValido = computed(
         form.fecha_empaque !== "" &&
         form.id_cc !== "" &&
         form.id_sku !== ""
+);
+
+// Código de SKU seleccionado en el modal (para la regla de estiba)
+const codigoSkuSeleccionado = computed(() => {
+    const s = skus.value.find(
+        (x) => Number(x.id_sku) === Number(form.id_sku)
+    );
+    return s ? s.codigo_sku : "";
+});
+
+// Factor visible (48 o 42) según el SKU elegido
+const factorActual = computed(() =>
+    factorCajasPorTarima(codigoSkuSeleccionado.value)
+);
+
+// Autocalcular estiba al cambiar cajas o SKU (si el usuario no la fijó a mano)
+watch(
+    () => [form.cajas_procesadas, form.id_sku],
+    () => {
+        if (!estibaManual.value) {
+            form.estiba_pallets = calcularEstiba(
+                form.cajas_procesadas,
+                codigoSkuSeleccionado.value
+            );
+        }
+    }
 );
 
 // ---------- Modal carga Excel ----------
@@ -139,14 +181,26 @@ onMounted(async () => {
     await Promise.all([cargarProducciones(), cargarCatalogos()]);
 });
 
+// Sets de IDs válidos (para validar el Excel)
+const idsFinca = computed(() => new Set(fincas.value.map((f) => Number(f.id_finca))));
+const idsProductor = computed(() => new Set(productores.value.map((p) => Number(p.id_productor))));
+const idsSku = computed(() => new Set(skus.value.map((s) => Number(s.id_sku))));
+const idsCc = computed(() => new Set(cedis.value.map((c) => Number(c.id_cc))));
+const idsCamara = computed(() => new Set(camaras.value.map((c) => Number(c.id_camara))));
+
+// Mapa id_sku -> codigo_sku (para la regla de estiba en la carga Excel)
+const codigoSkuPorId = computed(() => {
+    const m = {};
+    for (const s of skus.value) m[Number(s.id_sku)] = s.codigo_sku;
+    return m;
+});
+
 // ---------- Filtro combinado ----------
 const produccionesFiltradas = computed(() => {
     let lista = producciones.value;
 
     if (filtroEstado.value !== "todos") {
-        lista = lista.filter(
-            (p) => Number(p.estado) === Number(filtroEstado.value)
-        );
+        lista = lista.filter((p) => Number(p.estado) === Number(filtroEstado.value));
     }
 
     if (filtroModo.value === "dia" && filtroDia.value) {
@@ -154,9 +208,7 @@ const produccionesFiltradas = computed(() => {
             (p) => (p.fecha_empaque || "").substring(0, 10) === filtroDia.value
         );
     } else if (filtroModo.value === "semana" && filtroSemana.value) {
-        lista = lista.filter(
-            (p) => Number(p.semana) === Number(filtroSemana.value)
-        );
+        lista = lista.filter((p) => Number(p.semana) === Number(filtroSemana.value));
     } else if (filtroModo.value === "mes" && filtroMes.value) {
         lista = lista.filter(
             (p) => (p.fecha_empaque || "").substring(0, 7) === filtroMes.value
@@ -183,16 +235,10 @@ const produccionesFiltradas = computed(() => {
 });
 
 const totalCajas = computed(() =>
-    produccionesFiltradas.value.reduce(
-        (s, p) => s + (Number(p.cajas_procesadas) || 0),
-        0
-    )
+    produccionesFiltradas.value.reduce((s, p) => s + (Number(p.cajas_procesadas) || 0), 0)
 );
 const totalTarimas = computed(() =>
-    produccionesFiltradas.value.reduce(
-        (s, p) => s + (Number(p.estiba_pallets) || 0),
-        0
-    )
+    produccionesFiltradas.value.reduce((s, p) => s + (Number(p.estiba_pallets) || 0), 0)
 );
 
 const limpiarFiltros = () => {
@@ -209,6 +255,7 @@ const abrirCrear = () => {
     modoEdicion.value = false;
     idEditando.value = null;
     errorForm.value = "";
+    estibaManual.value = false;
     Object.assign(form, {
         semana: "",
         region: "",
@@ -232,6 +279,7 @@ const abrirEditar = (p) => {
     modoEdicion.value = true;
     idEditando.value = p.id_produccion;
     errorForm.value = "";
+    estibaManual.value = true; // al editar, respetamos el valor guardado
     Object.assign(form, {
         semana: p.semana ?? "",
         region: p.region ?? "",
@@ -255,6 +303,15 @@ const cerrarModal = () => {
     modalAbierto.value = false;
 };
 
+// Recalcular estiba manualmente (botón de la calculadora)
+const recalcularEstiba = () => {
+    estibaManual.value = false;
+    form.estiba_pallets = calcularEstiba(
+        form.cajas_procesadas,
+        codigoSkuSeleccionado.value
+    );
+};
+
 const construirPayload = () => ({
     semana: Number(form.semana),
     region: form.region?.trim() || null,
@@ -262,9 +319,7 @@ const construirPayload = () => ({
     id_productor: Number(form.id_productor),
     fecha_empaque: form.fecha_empaque,
     transito:
-        form.transito === "" || form.transito === null
-            ? null
-            : Number(form.transito),
+        form.transito === "" || form.transito === null ? null : Number(form.transito),
     fecha_entrega: form.fecha_entrega || null,
     id_cc: Number(form.id_cc),
     id_sku: Number(form.id_sku),
@@ -286,10 +341,7 @@ const guardar = async () => {
     try {
         const payload = construirPayload();
         if (modoEdicion.value) {
-            await produccionService.actualizarProduccion(
-                idEditando.value,
-                payload
-            );
+            await produccionService.actualizarProduccion(idEditando.value, payload);
         } else {
             await produccionService.crearProduccion(payload);
         }
@@ -297,8 +349,7 @@ const guardar = async () => {
         await cargarProducciones();
     } catch (error) {
         errorForm.value =
-            error?.response?.data?.error ||
-            "No se pudo guardar la producción.";
+            error?.response?.data?.error || "No se pudo guardar la producción.";
     } finally {
         guardando.value = false;
     }
@@ -314,13 +365,12 @@ const eliminar = async (p) => {
         await cargarProducciones();
     } catch (error) {
         errorMsg.value =
-            error?.response?.data?.error ||
-            "No se pudo eliminar la producción.";
+            error?.response?.data?.error || "No se pudo eliminar la producción.";
     }
 };
 
 // =========================================================
-// CARGA MASIVA POR EXCEL
+// CARGA MASIVA POR EXCEL (POR IDs)
 // =========================================================
 const abrirExcel = () => {
     filasPreview.value = [];
@@ -335,64 +385,21 @@ const cerrarExcel = () => {
     modalExcel.value = false;
 };
 
-// Descarga la plantilla generándola en el momento con SheetJS (sin calidad)
 const descargarPlantilla = () => {
     const encabezados = [
-        "semana",
-        "region",
-        "codigo_finca",
-        "codigo_productor",
-        "fecha_empaque",
-        "transito",
-        "fecha_entrega",
-        "acronimo_cc",
-        "codigo_sku",
-        "cajas_procesadas",
-        "estiba_pallets",
-        "comentarios",
-        "nombre_camara"
+        "semana", "region", "id_finca", "id_productor", "fecha_empaque",
+        "transito", "fecha_entrega", "id_cc", "id_sku",
+        "cajas_procesadas", "estiba_pallets", "comentarios", "id_camara"
     ];
     const ejemplo = [
-        34, "Chiapas", "001", "A01", "2026-08-20", 4, "2026-08-24",
-        "WMT-CEDA", "CPR01102", 1152, 24, "24 convencional", "Camara 1"
+        34, "Chiapas", 52, 113, "2026-08-20", 4, "2026-08-24",
+        16, 13, 1152, 24, "24 convencional", 3
     ];
     const ws = XLSX.utils.aoa_to_sheet([encabezados, ejemplo]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Produccion");
-    XLSX.writeFile(wb, "plantilla_produccion.xlsx");
+    XLSX.writeFile(wb, "plantilla_produccion_ids.xlsx");
 };
-
-// Helpers de mapeo código -> id
-const buscarFinca = (codigo) =>
-    fincas.value.find(
-        (f) =>
-            String(f.codigo_finca).trim().toLowerCase() ===
-            String(codigo).trim().toLowerCase()
-    );
-const buscarProductor = (codigo) =>
-    productores.value.find(
-        (p) =>
-            String(p.codigo_productor).trim().toLowerCase() ===
-            String(codigo).trim().toLowerCase()
-    );
-const buscarSku = (codigo) =>
-    skus.value.find(
-        (s) =>
-            String(s.codigo_sku).trim().toLowerCase() ===
-            String(codigo).trim().toLowerCase()
-    );
-const buscarCedis = (acronimo) =>
-    cedis.value.find(
-        (c) =>
-            String(c.acronimo).trim().toLowerCase() ===
-            String(acronimo).trim().toLowerCase()
-    );
-const buscarCamara = (nombre) =>
-    camaras.value.find(
-        (c) =>
-            String(c.nombre_camara).trim().toLowerCase() ===
-            String(nombre).trim().toLowerCase()
-    );
 
 const normalizarFecha = (valor) => {
     if (!valor && valor !== 0) return null;
@@ -404,6 +411,12 @@ const normalizarFecha = (valor) => {
         return `${d.y}-${mm}-${dd}`;
     }
     return String(valor).substring(0, 10);
+};
+
+const numOrNull = (v) => {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(v);
+    return isNaN(n) ? null : n;
 };
 
 const onArchivo = async (event) => {
@@ -424,52 +437,60 @@ const onArchivo = async (event) => {
 
         filas.forEach((row, idx) => {
             const numFila = idx + 2;
-            const finca = buscarFinca(row.codigo_finca);
-            const productor = buscarProductor(row.codigo_productor);
-            const sku = buscarSku(row.codigo_sku);
-            const cc = buscarCedis(row.acronimo_cc);
-            const camara = row.nombre_camara
-                ? buscarCamara(row.nombre_camara)
-                : null;
+
+            const idFinca = numOrNull(row.id_finca);
+            const idProductor = numOrNull(row.id_productor);
+            const idSku = numOrNull(row.id_sku);
+            const idCc = numOrNull(row.id_cc);
+            const idCamara = numOrNull(row.id_camara);
 
             const problemas = [];
             if (!row.semana || isNaN(Number(row.semana)))
                 problemas.push("semana inválida");
-            if (!finca) problemas.push(`finca '${row.codigo_finca}' no existe`);
-            if (!productor)
-                problemas.push(`productor '${row.codigo_productor}' no existe`);
-            if (!sku) problemas.push(`SKU '${row.codigo_sku}' no existe`);
-            if (!cc) problemas.push(`cliente '${row.acronimo_cc}' no existe`);
             if (!row.fecha_empaque) problemas.push("falta fecha_empaque");
-            if (row.nombre_camara && !camara)
-                problemas.push(`cámara '${row.nombre_camara}' no existe`);
+            if (idFinca === null || !idsFinca.value.has(idFinca))
+                problemas.push(`id_finca '${row.id_finca}' no existe`);
+            if (idProductor === null || !idsProductor.value.has(idProductor))
+                problemas.push(`id_productor '${row.id_productor}' no existe`);
+            if (idSku === null || !idsSku.value.has(idSku))
+                problemas.push(`id_sku '${row.id_sku}' no existe`);
+            if (idCc === null || !idsCc.value.has(idCc))
+                problemas.push(`id_cc '${row.id_cc}' no existe`);
+            if (idCamara !== null && !idsCamara.value.has(idCamara))
+                problemas.push(`id_camara '${row.id_camara}' no existe`);
 
             if (problemas.length > 0) {
                 errores.push({ fila: numFila, mensaje: problemas.join("; ") });
                 return;
             }
 
+            const cajas = Number(row.cajas_procesadas) || 0;
+            const codigoSku = codigoSkuPorId.value[idSku];
+            // Si el Excel trae estiba, la respetamos; si no, la calculamos.
+            const estibaExcel = numOrNull(row.estiba_pallets);
+            const estiba =
+                estibaExcel !== null && estibaExcel > 0
+                    ? estibaExcel
+                    : calcularEstiba(cajas, codigoSku);
+
             validas.push({
                 _fila: numFila,
-                _resumen: `${finca.codigo_finca} · ${sku.codigo_sku} · ${cc.acronimo}`,
+                _resumen: `Finca ${idFinca} · SKU ${idSku} · CC ${idCc}`,
                 semana: Number(row.semana),
                 region: String(row.region || "").trim() || null,
-                id_finca: finca.id_finca,
-                id_productor: productor.id_productor,
+                id_finca: idFinca,
+                id_productor: idProductor,
                 fecha_empaque: normalizarFecha(row.fecha_empaque),
-                transito:
-                    row.transito === "" || row.transito === null
-                        ? null
-                        : Number(row.transito),
+                transito: numOrNull(row.transito),
                 fecha_entrega: row.fecha_entrega
                     ? normalizarFecha(row.fecha_entrega)
                     : null,
-                id_cc: cc.id_cc,
-                id_sku: sku.id_sku,
-                cajas_procesadas: Number(row.cajas_procesadas) || 0,
-                estiba_pallets: Number(row.estiba_pallets) || 0,
+                id_cc: idCc,
+                id_sku: idSku,
+                cajas_procesadas: cajas,
+                estiba_pallets: estiba,
                 comentarios: String(row.comentarios || "").trim() || null,
-                id_camara: camara ? camara.id_camara : null,
+                id_camara: idCamara,
                 estado: 1
             });
         });
@@ -492,12 +513,9 @@ const confirmarImport = async () => {
     progresoTotal.value = filasPreview.value.length;
     const payload = filasPreview.value.map(({ _fila, _resumen, ...rest }) => rest);
     try {
-        const res = await produccionService.crearMasivo(
-            payload,
-            (actual) => {
-                progresoActual.value = actual;
-            }
-        );
+        const res = await produccionService.crearMasivo(payload, (actual) => {
+            progresoActual.value = actual;
+        });
         resultadoImport.value = res;
         await cargarProducciones();
     } catch (error) {
@@ -522,18 +540,10 @@ const confirmarImport = async () => {
                 </p>
             </div>
             <div class="prod-header-btns">
-                <button
-                    v-if="canCreate"
-                    class="prod-btn-excel"
-                    @click="abrirExcel"
-                >
+                <button v-if="canCreate" class="prod-btn-excel" @click="abrirExcel">
                     📄 Cargar Excel
                 </button>
-                <button
-                    v-if="canCreate"
-                    class="prod-btn-nueva"
-                    @click="abrirCrear"
-                >
+                <button v-if="canCreate" class="prod-btn-nueva" @click="abrirCrear">
                     ➕ Nueva producción
                 </button>
             </div>
@@ -547,36 +557,15 @@ const confirmarImport = async () => {
                 class="prod-buscar"
                 placeholder="🔍 Buscar por finca, productor, SKU, cliente, región…"
             />
-
             <select v-model="filtroModo" class="prod-select">
                 <option value="todos">Todas las fechas</option>
                 <option value="dia">Por día</option>
                 <option value="semana">Por semana</option>
                 <option value="mes">Por mes</option>
             </select>
-
-            <input
-                v-if="filtroModo === 'dia'"
-                v-model="filtroDia"
-                type="date"
-                class="prod-select"
-            />
-            <input
-                v-if="filtroModo === 'semana'"
-                v-model="filtroSemana"
-                type="number"
-                min="1"
-                max="53"
-                placeholder="Semana"
-                class="prod-select"
-            />
-            <input
-                v-if="filtroModo === 'mes'"
-                v-model="filtroMes"
-                type="month"
-                class="prod-select"
-            />
-
+            <input v-if="filtroModo === 'dia'" v-model="filtroDia" type="date" class="prod-select" />
+            <input v-if="filtroModo === 'semana'" v-model="filtroSemana" type="number" min="1" max="53" placeholder="Semana" class="prod-select" />
+            <input v-if="filtroModo === 'mes'" v-model="filtroMes" type="month" class="prod-select" />
             <select v-model="filtroEstado" class="prod-select">
                 <option value="todos">Todos los estados</option>
                 <option value="1">Planeada</option>
@@ -584,10 +573,7 @@ const confirmarImport = async () => {
                 <option value="3">Recibida</option>
                 <option value="0">Cancelada</option>
             </select>
-
-            <button class="prod-btn-limpiar" @click="limpiarFiltros">
-                Limpiar
-            </button>
+            <button class="prod-btn-limpiar" @click="limpiarFiltros">Limpiar</button>
         </div>
 
         <div class="prod-conteo-row">
@@ -605,10 +591,7 @@ const confirmarImport = async () => {
         <div v-else-if="producciones.length === 0" class="prod-estado">
             No hay producciones registradas todavía.
         </div>
-        <div
-            v-else-if="produccionesFiltradas.length === 0"
-            class="prod-estado"
-        >
+        <div v-else-if="produccionesFiltradas.length === 0" class="prod-estado">
             No se encontraron producciones con los filtros aplicados.
         </div>
 
@@ -640,9 +623,7 @@ const confirmarImport = async () => {
                             {{ p.nombre_finca }}
                         </td>
                         <td>{{ p.nombre_productor }}</td>
-                        <td class="col-centro">
-                            {{ (p.fecha_empaque || "").substring(0, 10) }}
-                        </td>
+                        <td class="col-centro">{{ (p.fecha_empaque || "").substring(0, 10) }}</td>
                         <td>
                             <b>{{ p.cliente }}</b>
                             <small>{{ p.cedis }}</small>
@@ -654,37 +635,18 @@ const confirmarImport = async () => {
                         <td class="col-centro">{{ p.cajas_procesadas }}</td>
                         <td class="col-centro">{{ p.estiba_pallets }}</td>
                         <td>
-                            <span v-if="p.nombre_camara" class="pill-pre">
-                                🧊 {{ p.nombre_camara }}
-                            </span>
+                            <span v-if="p.nombre_camara" class="pill-pre">🧊 {{ p.nombre_camara }}</span>
                             <span v-else class="pill-directo">Directo</span>
                         </td>
                         <td class="col-centro">
-                            <span
-                                class="badge-estado"
-                                :class="'est-' + Number(p.estado)"
-                            >
+                            <span class="badge-estado" :class="'est-' + Number(p.estado)">
                                 {{ estadoLabel(p.estado) }}
                             </span>
                         </td>
                         <td v-if="hayAcciones" class="col-centro">
                             <div class="acciones">
-                                <button
-                                    v-if="canEdit"
-                                    class="btn-icono editar"
-                                    title="Editar"
-                                    @click="abrirEditar(p)"
-                                >
-                                    ✏️
-                                </button>
-                                <button
-                                    v-if="canDelete"
-                                    class="btn-icono eliminar"
-                                    title="Eliminar"
-                                    @click="eliminar(p)"
-                                >
-                                    🗑️
-                                </button>
+                                <button v-if="canEdit" class="btn-icono editar" title="Editar" @click="abrirEditar(p)">✏️</button>
+                                <button v-if="canDelete" class="btn-icono eliminar" title="Eliminar" @click="eliminar(p)">🗑️</button>
                             </div>
                         </td>
                     </tr>
@@ -716,11 +678,7 @@ const confirmarImport = async () => {
                         Finca *
                         <select v-model="form.id_finca">
                             <option value="" disabled>Selecciona una finca…</option>
-                            <option
-                                v-for="f in fincas"
-                                :key="f.id_finca"
-                                :value="f.id_finca"
-                            >
+                            <option v-for="f in fincas" :key="f.id_finca" :value="f.id_finca">
                                 {{ f.codigo_finca }} · {{ f.nombre }}
                             </option>
                         </select>
@@ -730,11 +688,7 @@ const confirmarImport = async () => {
                         Productor *
                         <select v-model="form.id_productor">
                             <option value="" disabled>Selecciona un productor…</option>
-                            <option
-                                v-for="pr in productores"
-                                :key="pr.id_productor"
-                                :value="pr.id_productor"
-                            >
+                            <option v-for="pr in productores" :key="pr.id_productor" :value="pr.id_productor">
                                 {{ pr.codigo_productor }} · {{ pr.nombre }}
                             </option>
                         </select>
@@ -755,11 +709,7 @@ const confirmarImport = async () => {
                         Cliente / Cedis *
                         <select v-model="form.id_cc">
                             <option value="" disabled>Selecciona un cliente…</option>
-                            <option
-                                v-for="c in cedis"
-                                :key="c.id_cc"
-                                :value="c.id_cc"
-                            >
+                            <option v-for="c in cedis" :key="c.id_cc" :value="c.id_cc">
                                 {{ c.acronimo }} · {{ c.cliente }} ({{ c.cedis }})
                             </option>
                         </select>
@@ -769,17 +719,13 @@ const confirmarImport = async () => {
                         SKU *
                         <select v-model="form.id_sku">
                             <option value="" disabled>Selecciona un SKU…</option>
-                            <option
-                                v-for="s in skus"
-                                :key="s.id_sku"
-                                :value="s.id_sku"
-                            >
+                            <option v-for="s in skus" :key="s.id_sku" :value="s.id_sku">
                                 {{ s.codigo_sku }} · {{ s.calidad }}
                             </option>
                         </select>
                     </label>
 
-                    <div class="grid-3">
+                    <div class="grid-2">
                         <label>
                             Tránsito (días)
                             <input v-model="form.transito" type="number" min="0" />
@@ -788,21 +734,37 @@ const confirmarImport = async () => {
                             Cajas procesadas
                             <input v-model="form.cajas_procesadas" type="number" min="0" />
                         </label>
-                        <label>
-                            Estiba (pallets)
-                            <input v-model="form.estiba_pallets" type="number" min="0" />
-                        </label>
                     </div>
 
+                    <!-- Estiba con autocálculo -->
                     <label>
-                        Preenfrío (cámara)
+                        Estiba (tarimas)
+                        <span class="estiba-hint" v-if="form.id_sku">
+                            regla: {{ factorActual }} cajas = 1 tarima
+                        </span>
+                        <div class="estiba-row">
+                            <input
+                                v-model="form.estiba_pallets"
+                                type="number"
+                                min="0"
+                                @input="estibaManual = true"
+                            />
+                            <button
+                                type="button"
+                                class="btn-recalc"
+                                title="Recalcular con la regla"
+                                @click="recalcularEstiba"
+                            >
+                                🔄 Auto
+                            </button>
+                        </div>
+                    </label>
+
+                    <label>
+                        Preenfrío (cámara) — planeación inicial
                         <select v-model="form.id_camara">
                             <option value="">Directo (no se preenfría)</option>
-                            <option
-                                v-for="cam in camaras"
-                                :key="cam.id_camara"
-                                :value="cam.id_camara"
-                            >
+                            <option v-for="cam in camaras" :key="cam.id_camara" :value="cam.id_camara">
                                 {{ cam.nombre_camara }}
                             </option>
                         </select>
@@ -828,11 +790,7 @@ const confirmarImport = async () => {
 
                 <div class="modal-footer">
                     <button class="btn-cancelar" @click="cerrarModal">Cancelar</button>
-                    <button
-                        class="btn-guardar"
-                        :disabled="guardando || !formValido"
-                        @click="guardar"
-                    >
+                    <button class="btn-guardar" :disabled="guardando || !formValido" @click="guardar">
                         {{ guardando ? "Guardando…" : "Guardar" }}
                     </button>
                 </div>
@@ -843,7 +801,7 @@ const confirmarImport = async () => {
         <div v-if="modalExcel" class="modal-overlay" @click.self="cerrarExcel">
             <div class="modal modal-lg">
                 <div class="modal-header">
-                    <h3>📄 Carga masiva por Excel</h3>
+                    <h3>📄 Carga masiva por Excel (por IDs)</h3>
                     <button class="modal-close" @click="cerrarExcel">✕</button>
                 </div>
 
@@ -851,7 +809,10 @@ const confirmarImport = async () => {
                     <div class="excel-pasos">
                         <p>
                             <b>1.</b> Descarga la plantilla, llénala con los
-                            <b>códigos</b> de tus catálogos y súbela.
+                            <b>IDs</b> de tus catálogos (llaves foráneas) y súbela.
+                            Deja <b>id_camara</b> vacío si el proceso va directo.
+                            Si dejas <b>estiba_pallets</b> vacío, se calcula solo
+                            (48 cajas = 1 tarima · 42 para CPL08133/34/41).
                         </p>
                         <button class="btn-plantilla" @click="descargarPlantilla">
                             ⬇️ Descargar plantilla
@@ -882,6 +843,7 @@ const confirmarImport = async () => {
                             >
                                 Fila {{ f._fila }}: {{ f._resumen }}
                                 · Sem {{ f.semana }} · {{ f.cajas_procesadas }} cajas
+                                · {{ f.estiba_pallets }} tarimas
                             </div>
                             <div v-if="filasPreview.length > 50" class="excel-mas">
                                 …y {{ filasPreview.length - 50 }} más
@@ -892,10 +854,7 @@ const confirmarImport = async () => {
                     <div v-if="importando" class="excel-progreso">
                         Importando {{ progresoActual }} / {{ progresoTotal }}…
                         <div class="excel-bar">
-                            <div
-                                class="excel-bar-fill"
-                                :style="{ width: (progresoTotal ? (progresoActual/progresoTotal*100) : 0) + '%' }"
-                            ></div>
+                            <div class="excel-bar-fill" :style="{ width: (progresoTotal ? (progresoActual/progresoTotal*100) : 0) + '%' }"></div>
                         </div>
                     </div>
 
