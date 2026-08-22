@@ -531,3 +531,22 @@
 .btn-recalc:hover {
     background: var(--verde-oscuro);
 }
+/* Píldora del código de lote */
+.lote-pill {
+    display: inline-block;
+    background: #e7eff0;
+    color: #37637a;
+    font-weight: 700;
+    font-size: 0.74rem;
+    padding: 2px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    font-family: "Consolas", "Courier New", monospace;
+}
+.lote-hint {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--texto-suave);
+    font-style: italic;
+}

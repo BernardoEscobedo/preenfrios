@@ -6,12 +6,12 @@
 //  - Filtros: texto libre, por día, por semana, por mes, por estado.
 //  - Alta uno por uno (modal con dropdowns de catálogos).
 //  - Carga masiva por Excel POR IDs.
-//  - AUTOCÁLCULO DE ESTIBA (tarimas) según cajas y SKU:
-//      · 48 cajas = 1 tarima (general)
-//      · 42 cajas = 1 tarima para SKUs CPL08133, CPL08134, CPL08141
-//    (La ocupación de cámara NO se calcula aquí; se detona al recepcionar.)
+//  - AUTOCÁLCULO DE ESTIBA (tarimas): 48 cajas = 1 tarima
+//    (42 para CPL08133/34/41).
+//  - AUTOGENERACIÓN DEL CÓDIGO DE LOTE (15 díg.): editable.
+//      Zona(finca) + Productor(2) + Finca(3) - Semana(2) + FechaDDMM - Turno(sku)
+//      Ej: B12015-251806-1
 //
-// NOTA: 'calidad' ya no es columna de produccion; se toma del SKU.
 // Requiere:  npm install xlsx --legacy-peer-deps
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import * as XLSX from "xlsx";
@@ -37,20 +37,36 @@ const factorCajasPorTarima = (codigo_sku) =>
     SKUS_FACTOR_42.includes(String(codigo_sku || "").trim().toUpperCase())
         ? 42
         : 48;
-// Calcula tarimas (estiba) a partir de cajas y código de SKU
 const calcularEstiba = (cajas, codigo_sku) => {
     const c = Number(cajas) || 0;
     if (c <= 0) return 0;
     return Math.ceil(c / factorCajasPorTarima(codigo_sku));
 };
 
-// Estados de producción
-const ESTADOS = {
-    0: "Cancelada",
-    1: "Planeada",
-    2: "En recepción",
-    3: "Recibida"
+// ---------- Generador de LOTE (15 dígitos) ----------
+const ZONA_LETRA = { 1: "A", 2: "B", 3: "C" };
+const pad = (v, n) => String(v ?? "").padStart(n, "0").slice(-n);
+const generarLote = ({
+    zonaFinca,
+    codigoProductor,
+    codigoFinca,
+    semana,
+    fechaEmpaque,
+    turno
+}) => {
+    if (!codigoProductor || !codigoFinca || !semana || !fechaEmpaque) return "";
+    const z = ZONA_LETRA[Number(zonaFinca)] || "X";
+    const prod = pad(codigoProductor, 2);
+    const fin = pad(codigoFinca, 3);
+    const sem = pad(semana, 2);
+    const mm = String(fechaEmpaque).substring(5, 7);
+    const dd = String(fechaEmpaque).substring(8, 10);
+    const t = String(turno ?? 1).slice(-1);
+    return `${z}${prod}${fin}-${sem}${dd}${mm}-${t}`;
 };
+
+// Estados de producción
+const ESTADOS = { 0: "Cancelada", 1: "Planeada", 2: "En recepción", 3: "Recibida" };
 const estadoLabel = (e) => ESTADOS[Number(e)] || "—";
 
 // ---------- Estado ----------
@@ -78,8 +94,8 @@ const modoEdicion = ref(false);
 const guardando = ref(false);
 const errorForm = ref("");
 const idEditando = ref(null);
-// Cuando el usuario edita la estiba a mano, dejamos de autocalcular
 const estibaManual = ref(false);
+const loteManual = ref(false);
 
 const form = reactive({
     semana: "",
@@ -93,6 +109,7 @@ const form = reactive({
     id_sku: "",
     cajas_procesadas: 0,
     estiba_pallets: 0,
+    codigo_lote: "",
     comentarios: "",
     id_camara: "",
     estado: 1
@@ -108,20 +125,22 @@ const formValido = computed(
         form.id_sku !== ""
 );
 
-// Código de SKU seleccionado en el modal (para la regla de estiba)
-const codigoSkuSeleccionado = computed(() => {
-    const s = skus.value.find(
-        (x) => Number(x.id_sku) === Number(form.id_sku)
-    );
-    return s ? s.codigo_sku : "";
-});
-
-// Factor visible (48 o 42) según el SKU elegido
+// Objetos seleccionados en el modal
+const fincaSel = computed(() =>
+    fincas.value.find((f) => Number(f.id_finca) === Number(form.id_finca))
+);
+const productorSel = computed(() =>
+    productores.value.find((p) => Number(p.id_productor) === Number(form.id_productor))
+);
+const skuSel = computed(() =>
+    skus.value.find((s) => Number(s.id_sku) === Number(form.id_sku))
+);
+const codigoSkuSeleccionado = computed(() => skuSel.value?.codigo_sku || "");
 const factorActual = computed(() =>
     factorCajasPorTarima(codigoSkuSeleccionado.value)
 );
 
-// Autocalcular estiba al cambiar cajas o SKU (si el usuario no la fijó a mano)
+// Autocalcular estiba
 watch(
     () => [form.cajas_procesadas, form.id_sku],
     () => {
@@ -130,6 +149,23 @@ watch(
                 form.cajas_procesadas,
                 codigoSkuSeleccionado.value
             );
+        }
+    }
+);
+
+// Autogenerar lote al cambiar finca/productor/semana/fecha/sku (turno del sku)
+watch(
+    () => [form.id_finca, form.id_productor, form.semana, form.fecha_empaque, form.id_sku],
+    () => {
+        if (!loteManual.value) {
+            form.codigo_lote = generarLote({
+                zonaFinca: fincaSel.value?.zona,
+                codigoProductor: productorSel.value?.codigo_productor,
+                codigoFinca: fincaSel.value?.codigo_finca,
+                semana: form.semana,
+                fechaEmpaque: form.fecha_empaque,
+                turno: skuSel.value?.turno
+            });
         }
     }
 );
@@ -181,40 +217,43 @@ onMounted(async () => {
     await Promise.all([cargarProducciones(), cargarCatalogos()]);
 });
 
-// Sets de IDs válidos (para validar el Excel)
+// Sets de IDs válidos
 const idsFinca = computed(() => new Set(fincas.value.map((f) => Number(f.id_finca))));
 const idsProductor = computed(() => new Set(productores.value.map((p) => Number(p.id_productor))));
 const idsSku = computed(() => new Set(skus.value.map((s) => Number(s.id_sku))));
 const idsCc = computed(() => new Set(cedis.value.map((c) => Number(c.id_cc))));
 const idsCamara = computed(() => new Set(camaras.value.map((c) => Number(c.id_camara))));
 
-// Mapa id_sku -> codigo_sku (para la regla de estiba en la carga Excel)
-const codigoSkuPorId = computed(() => {
+// Índices por id para la carga Excel (para estiba y lote)
+const skuPorId = computed(() => {
     const m = {};
-    for (const s of skus.value) m[Number(s.id_sku)] = s.codigo_sku;
+    for (const s of skus.value) m[Number(s.id_sku)] = s;
+    return m;
+});
+const fincaPorId = computed(() => {
+    const m = {};
+    for (const f of fincas.value) m[Number(f.id_finca)] = f;
+    return m;
+});
+const productorPorId = computed(() => {
+    const m = {};
+    for (const p of productores.value) m[Number(p.id_productor)] = p;
     return m;
 });
 
 // ---------- Filtro combinado ----------
 const produccionesFiltradas = computed(() => {
     let lista = producciones.value;
-
     if (filtroEstado.value !== "todos") {
         lista = lista.filter((p) => Number(p.estado) === Number(filtroEstado.value));
     }
-
     if (filtroModo.value === "dia" && filtroDia.value) {
-        lista = lista.filter(
-            (p) => (p.fecha_empaque || "").substring(0, 10) === filtroDia.value
-        );
+        lista = lista.filter((p) => (p.fecha_empaque || "").substring(0, 10) === filtroDia.value);
     } else if (filtroModo.value === "semana" && filtroSemana.value) {
         lista = lista.filter((p) => Number(p.semana) === Number(filtroSemana.value));
     } else if (filtroModo.value === "mes" && filtroMes.value) {
-        lista = lista.filter(
-            (p) => (p.fecha_empaque || "").substring(0, 7) === filtroMes.value
-        );
+        lista = lista.filter((p) => (p.fecha_empaque || "").substring(0, 7) === filtroMes.value);
     }
-
     const q = busqueda.value.trim().toLowerCase();
     if (q) {
         lista = lista.filter((p) => {
@@ -226,11 +265,11 @@ const produccionesFiltradas = computed(() => {
                 (p.cliente || "").toLowerCase().includes(q) ||
                 (p.cedis || "").toLowerCase().includes(q) ||
                 (p.region || "").toLowerCase().includes(q) ||
+                (p.codigo_lote || "").toLowerCase().includes(q) ||
                 (p.nombre_camara || "").toLowerCase().includes(q)
             );
         });
     }
-
     return lista;
 });
 
@@ -256,6 +295,7 @@ const abrirCrear = () => {
     idEditando.value = null;
     errorForm.value = "";
     estibaManual.value = false;
+    loteManual.value = false;
     Object.assign(form, {
         semana: "",
         region: "",
@@ -268,6 +308,7 @@ const abrirCrear = () => {
         id_sku: "",
         cajas_procesadas: 0,
         estiba_pallets: 0,
+        codigo_lote: "",
         comentarios: "",
         id_camara: "",
         estado: 1
@@ -279,7 +320,8 @@ const abrirEditar = (p) => {
     modoEdicion.value = true;
     idEditando.value = p.id_produccion;
     errorForm.value = "";
-    estibaManual.value = true; // al editar, respetamos el valor guardado
+    estibaManual.value = true;
+    loteManual.value = true; // al editar respetamos el lote guardado
     Object.assign(form, {
         semana: p.semana ?? "",
         region: p.region ?? "",
@@ -292,6 +334,7 @@ const abrirEditar = (p) => {
         id_sku: p.id_sku ?? "",
         cajas_procesadas: p.cajas_procesadas ?? 0,
         estiba_pallets: p.estiba_pallets ?? 0,
+        codigo_lote: p.codigo_lote ?? "",
         comentarios: p.comentarios ?? "",
         id_camara: p.id_camara ?? "",
         estado: p.estado ?? 1
@@ -303,7 +346,6 @@ const cerrarModal = () => {
     modalAbierto.value = false;
 };
 
-// Recalcular estiba manualmente (botón de la calculadora)
 const recalcularEstiba = () => {
     estibaManual.value = false;
     form.estiba_pallets = calcularEstiba(
@@ -312,19 +354,31 @@ const recalcularEstiba = () => {
     );
 };
 
+const regenerarLote = () => {
+    loteManual.value = false;
+    form.codigo_lote = generarLote({
+        zonaFinca: fincaSel.value?.zona,
+        codigoProductor: productorSel.value?.codigo_productor,
+        codigoFinca: fincaSel.value?.codigo_finca,
+        semana: form.semana,
+        fechaEmpaque: form.fecha_empaque,
+        turno: skuSel.value?.turno
+    });
+};
+
 const construirPayload = () => ({
     semana: Number(form.semana),
     region: form.region?.trim() || null,
     id_finca: Number(form.id_finca),
     id_productor: Number(form.id_productor),
     fecha_empaque: form.fecha_empaque,
-    transito:
-        form.transito === "" || form.transito === null ? null : Number(form.transito),
+    transito: form.transito === "" || form.transito === null ? null : Number(form.transito),
     fecha_entrega: form.fecha_entrega || null,
     id_cc: Number(form.id_cc),
     id_sku: Number(form.id_sku),
     cajas_procesadas: Number(form.cajas_procesadas) || 0,
     estiba_pallets: Number(form.estiba_pallets) || 0,
+    codigo_lote: form.codigo_lote?.trim() || null,
     comentarios: form.comentarios?.trim() || null,
     id_camara: form.id_camara === "" ? null : Number(form.id_camara),
     estado: Number(form.estado)
@@ -389,11 +443,11 @@ const descargarPlantilla = () => {
     const encabezados = [
         "semana", "region", "id_finca", "id_productor", "fecha_empaque",
         "transito", "fecha_entrega", "id_cc", "id_sku",
-        "cajas_procesadas", "estiba_pallets", "comentarios", "id_camara"
+        "cajas_procesadas", "estiba_pallets", "codigo_lote", "comentarios", "id_camara"
     ];
     const ejemplo = [
         34, "Chiapas", 52, 113, "2026-08-20", 4, "2026-08-24",
-        16, 13, 1152, 24, "24 convencional", 3
+        16, 13, 1152, 24, "", "24 convencional", 3
     ];
     const ws = XLSX.utils.aoa_to_sheet([encabezados, ejemplo]);
     const wb = XLSX.utils.book_new();
@@ -425,7 +479,6 @@ const onArchivo = async (event) => {
     filasPreview.value = [];
     erroresPreview.value = [];
     resultadoImport.value = null;
-
     try {
         const buffer = await file.arrayBuffer();
         const wb = XLSX.read(buffer, { type: "array" });
@@ -437,7 +490,6 @@ const onArchivo = async (event) => {
 
         filas.forEach((row, idx) => {
             const numFila = idx + 2;
-
             const idFinca = numOrNull(row.id_finca);
             const idProductor = numOrNull(row.id_productor);
             const idSku = numOrNull(row.id_sku);
@@ -445,8 +497,7 @@ const onArchivo = async (event) => {
             const idCamara = numOrNull(row.id_camara);
 
             const problemas = [];
-            if (!row.semana || isNaN(Number(row.semana)))
-                problemas.push("semana inválida");
+            if (!row.semana || isNaN(Number(row.semana))) problemas.push("semana inválida");
             if (!row.fecha_empaque) problemas.push("falta fecha_empaque");
             if (idFinca === null || !idsFinca.value.has(idFinca))
                 problemas.push(`id_finca '${row.id_finca}' no existe`);
@@ -465,30 +516,48 @@ const onArchivo = async (event) => {
             }
 
             const cajas = Number(row.cajas_procesadas) || 0;
-            const codigoSku = codigoSkuPorId.value[idSku];
-            // Si el Excel trae estiba, la respetamos; si no, la calculamos.
+            const sku = skuPorId.value[idSku];
+            const finca = fincaPorId.value[idFinca];
+            const productor = productorPorId.value[idProductor];
+            const fechaEmpaque = normalizarFecha(row.fecha_empaque);
+
+            // Estiba: respeta la del Excel si trae, si no calcula
             const estibaExcel = numOrNull(row.estiba_pallets);
             const estiba =
                 estibaExcel !== null && estibaExcel > 0
                     ? estibaExcel
-                    : calcularEstiba(cajas, codigoSku);
+                    : calcularEstiba(cajas, sku?.codigo_sku);
+
+            // Lote: respeta el del Excel si trae, si no genera
+            const loteExcel = String(row.codigo_lote || "").trim();
+            const lote =
+                loteExcel !== ""
+                    ? loteExcel
+                    : generarLote({
+                          zonaFinca: finca?.zona,
+                          codigoProductor: productor?.codigo_productor,
+                          codigoFinca: finca?.codigo_finca,
+                          semana: Number(row.semana),
+                          fechaEmpaque,
+                          turno: sku?.turno
+                      });
 
             validas.push({
                 _fila: numFila,
                 _resumen: `Finca ${idFinca} · SKU ${idSku} · CC ${idCc}`,
+                _lote: lote,
                 semana: Number(row.semana),
                 region: String(row.region || "").trim() || null,
                 id_finca: idFinca,
                 id_productor: idProductor,
-                fecha_empaque: normalizarFecha(row.fecha_empaque),
+                fecha_empaque: fechaEmpaque,
                 transito: numOrNull(row.transito),
-                fecha_entrega: row.fecha_entrega
-                    ? normalizarFecha(row.fecha_entrega)
-                    : null,
+                fecha_entrega: row.fecha_entrega ? normalizarFecha(row.fecha_entrega) : null,
                 id_cc: idCc,
                 id_sku: idSku,
                 cajas_procesadas: cajas,
                 estiba_pallets: estiba,
+                codigo_lote: lote || null,
                 comentarios: String(row.comentarios || "").trim() || null,
                 id_camara: idCamara,
                 estado: 1
@@ -498,9 +567,7 @@ const onArchivo = async (event) => {
         filasPreview.value = validas;
         erroresPreview.value = errores;
     } catch (error) {
-        erroresPreview.value = [
-            { fila: "-", mensaje: "No se pudo leer el archivo Excel." }
-        ];
+        erroresPreview.value = [{ fila: "-", mensaje: "No se pudo leer el archivo Excel." }];
     } finally {
         event.target.value = "";
     }
@@ -511,7 +578,9 @@ const confirmarImport = async () => {
     importando.value = true;
     progresoActual.value = 0;
     progresoTotal.value = filasPreview.value.length;
-    const payload = filasPreview.value.map(({ _fila, _resumen, ...rest }) => rest);
+    const payload = filasPreview.value.map(
+        ({ _fila, _resumen, _lote, ...rest }) => rest
+    );
     try {
         const res = await produccionService.crearMasivo(payload, (actual) => {
             progresoActual.value = actual;
@@ -519,10 +588,7 @@ const confirmarImport = async () => {
         resultadoImport.value = res;
         await cargarProducciones();
     } catch (error) {
-        erroresPreview.value.push({
-            fila: "-",
-            mensaje: "Error general durante la importación."
-        });
+        erroresPreview.value.push({ fila: "-", mensaje: "Error general durante la importación." });
     } finally {
         importando.value = false;
     }
@@ -555,7 +621,7 @@ const confirmarImport = async () => {
                 v-model="busqueda"
                 type="text"
                 class="prod-buscar"
-                placeholder="🔍 Buscar por finca, productor, SKU, cliente, región…"
+                placeholder="🔍 Buscar por finca, productor, SKU, cliente, lote…"
             />
             <select v-model="filtroModo" class="prod-select">
                 <option value="todos">Todas las fechas</option>
@@ -601,7 +667,7 @@ const confirmarImport = async () => {
                 <thead>
                     <tr>
                         <th class="col-centro">Sem</th>
-                        <th>Región</th>
+                        <th>Lote</th>
                         <th>Finca</th>
                         <th>Productor</th>
                         <th class="col-centro">Empaque</th>
@@ -617,7 +683,9 @@ const confirmarImport = async () => {
                 <tbody>
                     <tr v-for="p in produccionesFiltradas" :key="p.id_produccion">
                         <td class="col-centro">{{ p.semana }}</td>
-                        <td>{{ p.region || "—" }}</td>
+                        <td>
+                            <span class="lote-pill">{{ p.codigo_lote || "—" }}</span>
+                        </td>
                         <td>
                             <span class="cod-pill">{{ p.codigo_finca }}</span>
                             {{ p.nombre_finca }}
@@ -720,9 +788,32 @@ const confirmarImport = async () => {
                         <select v-model="form.id_sku">
                             <option value="" disabled>Selecciona un SKU…</option>
                             <option v-for="s in skus" :key="s.id_sku" :value="s.id_sku">
-                                {{ s.codigo_sku }} · {{ s.calidad }}
+                                {{ s.codigo_sku }} · {{ s.calidad }} (turno {{ s.turno }})
                             </option>
                         </select>
+                    </label>
+
+                    <!-- LOTE autogenerado -->
+                    <label>
+                        Código de lote (15 díg.)
+                        <span class="lote-hint">se genera solo; editable si cambia</span>
+                        <div class="estiba-row">
+                            <input
+                                v-model="form.codigo_lote"
+                                type="text"
+                                maxlength="20"
+                                placeholder="Ej. B12015-251806-1"
+                                @input="loteManual = true"
+                            />
+                            <button
+                                type="button"
+                                class="btn-recalc"
+                                title="Regenerar lote"
+                                @click="regenerarLote"
+                            >
+                                🔄 Auto
+                            </button>
+                        </div>
                     </label>
 
                     <div class="grid-2">
@@ -736,7 +827,7 @@ const confirmarImport = async () => {
                         </label>
                     </div>
 
-                    <!-- Estiba con autocálculo -->
+                    <!-- ESTIBA autocalculada -->
                     <label>
                         Estiba (tarimas)
                         <span class="estiba-hint" v-if="form.id_sku">
@@ -809,10 +900,10 @@ const confirmarImport = async () => {
                     <div class="excel-pasos">
                         <p>
                             <b>1.</b> Descarga la plantilla, llénala con los
-                            <b>IDs</b> de tus catálogos (llaves foráneas) y súbela.
-                            Deja <b>id_camara</b> vacío si el proceso va directo.
-                            Si dejas <b>estiba_pallets</b> vacío, se calcula solo
-                            (48 cajas = 1 tarima · 42 para CPL08133/34/41).
+                            <b>IDs</b> de tus catálogos y súbela. Deja
+                            <b>estiba_pallets</b> y <b>codigo_lote</b> vacíos para
+                            que se calculen/generen solos. Deja <b>id_camara</b>
+                            vacío si va directo.
                         </p>
                         <button class="btn-plantilla" @click="descargarPlantilla">
                             ⬇️ Descargar plantilla
@@ -842,8 +933,8 @@ const confirmarImport = async () => {
                                 class="excel-preview-item"
                             >
                                 Fila {{ f._fila }}: {{ f._resumen }}
-                                · Sem {{ f.semana }} · {{ f.cajas_procesadas }} cajas
-                                · {{ f.estiba_pallets }} tarimas
+                                · Lote {{ f._lote || "—" }}
+                                · {{ f.cajas_procesadas }} cajas / {{ f.estiba_pallets }} tar
                             </div>
                             <div v-if="filasPreview.length > 50" class="excel-mas">
                                 …y {{ filasPreview.length - 50 }} más
